@@ -105,6 +105,50 @@ public class ChessPiece {
                     }
                 }
             }
+        } else if (pieceType == PieceType.KNIGHT) {
+            int[][] offsets = {
+                    {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
+                    {1, -2}, {1, 2}, {2, -1}, {2, 1}
+            };
+
+            for (int[] offset : offsets) {
+                int newRow = myPosition.getRow() + offset[0];
+                int newCol = myPosition.getColumn() + offset[1];
+                ChessPosition target = new ChessPosition(newRow, newCol);
+
+                if (isOnBoard(target)) {
+                    ChessPiece occupant = board.getPiece(target);
+                    if (occupant == null || occupant.getTeamColor() != this.teamColor) {
+                        validMoves.add(new ChessMove(myPosition, target, null));
+                    }
+                }
+            }
+        } else if (pieceType == PieceType.ROOK) {
+            int[][] directions = {
+                    {-1, 0}, {1, 0}, // vertical
+                    {0, -1}, {0, 1}  // horizontal
+            };
+
+            for (int[] dir : directions) {
+                int row = myPosition.getRow();
+                int col = myPosition.getColumn();
+                while (true) {
+                    row += dir[0];
+                    col += dir[1];
+                    ChessPosition target = new ChessPosition(row, col);
+                    if (!isOnBoard(target)) break;
+
+                    ChessPiece occupant = board.getPiece(target);
+                    if (occupant == null) {
+                        validMoves.add(new ChessMove(myPosition, target, null));
+                    } else {
+                        if (occupant.getTeamColor() != this.teamColor) {
+                            validMoves.add(new ChessMove(myPosition, target, null));
+                        }
+                        break; // can't move past any piece
+                    }
+                }
+            }
         }
         return validMoves;
     }
