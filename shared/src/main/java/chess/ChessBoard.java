@@ -32,7 +32,9 @@ public class ChessBoard {
      * position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        return squares[position.getRow()][position.getColumn()];
+        int row = position.getRow() - 1;
+        int col = position.getColumn() - 1;
+        return squares[row][col];
     }
 
     /**
@@ -40,6 +42,6 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        throw new RuntimeException("Not implemented");
+        squares = new ChessPiece[8][8]; // Clear board
     }
 }
