@@ -13,6 +13,11 @@ import java.util.Objects;
 public class ChessPiece {
     private final ChessGame.TeamColor teamColor;
     private final PieceType pieceType;
+    private boolean isOnBoard(ChessPosition pos) {
+        int row = pos.getRow();
+        int col = pos.getColumn();
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
+    }
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.teamColor = pieceColor;
         this.pieceType = type;
@@ -52,7 +57,36 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        return new ArrayList<>();
+        Collection<ChessMove> validMoves = new ArrayList<>();
+        if (pieceType == PieceType.PAWN) {
+            int row = myPosition.getRow();
+            int col = myPosition.getColumn();
+            int direction = (teamColor == ChessGame.TeamColor.WHITE) ? 1 : -1;
+
+            // if the spot in front is empty, able to move forward by 1
+            ChessPosition oneSpotForward = new ChessPosition(row + direction, col);
+            if (isOnBoard(oneSpotForward) && board.getPiece(oneSpotForward) == null) {
+                validMoves.add(new ChessMove(myPosition, oneSpotForward, null));
+            }
+            // if the pawn is at the starting row then it can move 2 forward as long as the spot is open
+            int startRow = (teamColor == ChessGame.TeamColor.WHITE) ? 2 : 7; // this tells the starting row depending on what color
+            ChessPosition twoSpotsForward = new ChessPosition(row + 2 * direction, col);
+            if (row == startRow && board.getPiece(twoSpotsForward) == null) {
+                validMoves.add(new ChessMove(myPosition, twoSpotsForward, null));
+            }
+            // Pawns can also move diagonally when capturing other pieces
+            int[] columnOffsets = {-1, 1};
+            for (int offset : columnOffsets) {
+                ChessPosition diagonal = new ChessPosition(row + direction, col + offset);
+                if (isOnBoard(diagonal)) {
+                    ChessPiece targetPiece = board.getPiece(diagonal);
+                    if (targetPiece != null && targetPiece.getTeamColor() != this.teamColor) {
+                        validMoves.add(new ChessMove(myPosition, diagonal, null));
+                    }
+                }
+            }
+        }
+        return validMoves;
     }
 
     @Override
