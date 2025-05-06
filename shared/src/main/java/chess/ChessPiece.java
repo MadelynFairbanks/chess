@@ -18,6 +18,28 @@ public class ChessPiece {
         int col = pos.getColumn();
         return row >= 1 && row <= 8 && col >= 1 && col <= 8;
     }
+    private void slidingAcrossTheBoardMoves(ChessBoard board, ChessPosition myPosition, Collection<ChessMove> validMoves, int[][] directions) {
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
+        for (int[] dir : directions) {
+            int r = row + dir[0];
+            int c = col + dir[1];
+            while (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
+                ChessPosition target = new ChessPosition(r, c);
+                ChessPiece occupant = board.getPiece(target);
+                if (occupant == null) {
+                    validMoves.add(new ChessMove(myPosition, target, null));
+                } else {
+                    if (occupant.getTeamColor() != this.teamColor) {
+                        validMoves.add(new ChessMove(myPosition, target, null));
+                    }
+                    break;
+                }
+                r += dir[0];
+                c += dir[1];
+            }
+        }
+    }
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.teamColor = pieceColor;
         this.pieceType = type;
@@ -124,32 +146,21 @@ public class ChessPiece {
                 }
             }
         } else if (pieceType == PieceType.ROOK) {
-            int[][] directions = {
-                    {-1, 0}, {1, 0}, // vertical
-                    {0, -1}, {0, 1}  // horizontal
+            int[][] rookDirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            slidingAcrossTheBoardMoves(board, myPosition, validMoves, rookDirs);
+
+        } else if (pieceType == PieceType.BISHOP) {
+            int[][] bishopDirs = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            slidingAcrossTheBoardMoves(board, myPosition, validMoves, bishopDirs);
+
+        } else if (pieceType == PieceType.QUEEN) {
+            int[][] queenDirs = {
+                    {-1, 0}, {1, 0}, {0, -1}, {0, 1},
+                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
             };
-
-            for (int[] dir : directions) {
-                int row = myPosition.getRow();
-                int col = myPosition.getColumn();
-                while (true) {
-                    row += dir[0];
-                    col += dir[1];
-                    ChessPosition target = new ChessPosition(row, col);
-                    if (!isOnBoard(target)) break;
-
-                    ChessPiece occupant = board.getPiece(target);
-                    if (occupant == null) {
-                        validMoves.add(new ChessMove(myPosition, target, null));
-                    } else {
-                        if (occupant.getTeamColor() != this.teamColor) {
-                            validMoves.add(new ChessMove(myPosition, target, null));
-                        }
-                        break; // can't move past any piece
-                    }
-                }
-            }
+            slidingAcrossTheBoardMoves(board, myPosition, validMoves, queenDirs);
         }
+
         return validMoves;
     }
 
