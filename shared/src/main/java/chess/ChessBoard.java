@@ -50,6 +50,18 @@ public class ChessBoard {
             squares[1][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
             squares[6][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
         }
+        // all the other pieces
+        ChessPiece.PieceType[] order = {
+                ChessPiece.PieceType.ROOK, ChessPiece.PieceType.KNIGHT, ChessPiece.PieceType.BISHOP,
+                ChessPiece.PieceType.QUEEN, ChessPiece.PieceType.KING, ChessPiece.PieceType.BISHOP,
+                ChessPiece.PieceType.KNIGHT, ChessPiece.PieceType.ROOK
+        };
+
+        // placing in the right spot according to color
+        for (int col = 0; col < 8; col++) {
+            squares[0][col] = new ChessPiece(ChessGame.TeamColor.WHITE, order[col]);
+            squares[7][col] = new ChessPiece(ChessGame.TeamColor.BLACK, order[col]);
+        }
     }
 
     @Override
