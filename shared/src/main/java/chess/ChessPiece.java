@@ -66,12 +66,22 @@ public class ChessPiece {
             // if the spot in front is empty, able to move forward by 1
             ChessPosition oneSpotForward = new ChessPosition(row + direction, col);
             if (isOnBoard(oneSpotForward) && board.getPiece(oneSpotForward) == null) {
-                validMoves.add(new ChessMove(myPosition, oneSpotForward, null));
+                int targetRow = oneSpotForward.getRow();
+                boolean isPromotion = (teamColor == ChessGame.TeamColor.WHITE && targetRow == 8) ||
+                        (teamColor == ChessGame.TeamColor.BLACK && targetRow == 1);
+                if (isPromotion) {
+                    validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.QUEEN));
+                    validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.ROOK));
+                    validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.BISHOP));
+                    validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.KNIGHT));
+                } else {
+                    validMoves.add(new ChessMove(myPosition, oneSpotForward, null));
+                }
             }
             // if the pawn is at the starting row then it can move 2 forward as long as the spot is open
             int startRow = (teamColor == ChessGame.TeamColor.WHITE) ? 2 : 7; // this tells the starting row depending on what color
             ChessPosition twoSpotsForward = new ChessPosition(row + 2 * direction, col);
-            if (row == startRow && board.getPiece(twoSpotsForward) == null) {
+            if (row == startRow && board.getPiece(oneSpotForward) == null && board.getPiece(twoSpotsForward) == null) {
                 validMoves.add(new ChessMove(myPosition, twoSpotsForward, null));
             }
             // Pawns can also move diagonally when capturing other pieces
@@ -81,7 +91,17 @@ public class ChessPiece {
                 if (isOnBoard(diagonal)) {
                     ChessPiece targetPiece = board.getPiece(diagonal);
                     if (targetPiece != null && targetPiece.getTeamColor() != this.teamColor) {
-                        validMoves.add(new ChessMove(myPosition, diagonal, null));
+                        int targetRow = diagonal.getRow();
+                        boolean isPromotion = (teamColor == ChessGame.TeamColor.WHITE && targetRow == 8) ||
+                                (teamColor == ChessGame.TeamColor.BLACK && targetRow == 1);
+                        if (isPromotion) {
+                            validMoves.add(new ChessMove(myPosition, diagonal, PieceType.QUEEN));
+                            validMoves.add(new ChessMove(myPosition, diagonal, PieceType.ROOK));
+                            validMoves.add(new ChessMove(myPosition, diagonal, PieceType.BISHOP));
+                            validMoves.add(new ChessMove(myPosition, diagonal, PieceType.KNIGHT));
+                        } else {
+                            validMoves.add(new ChessMove(myPosition, diagonal, null));
+                        }
                     }
                 }
             }
