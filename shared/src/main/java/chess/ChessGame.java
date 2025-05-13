@@ -12,6 +12,46 @@ public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
 
+    private ChessPosition findKingPosition(TeamColor color, ChessBoard board) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition pos = new ChessPosition(row, col);
+                ChessPiece p = board.getPiece(pos);
+                if (p != null && p.getTeamColor() == color && p.getPieceType() == ChessPiece.PieceType.KING) {
+                    return pos;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isInCheck(TeamColor color, ChessBoard board, ChessPosition kingPosition) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition pos = new ChessPosition(row, col);
+                ChessPiece attacker = board.getPiece(pos);
+                if (attacker != null && attacker.getTeamColor() != color) {
+                    Collection<ChessMove> moves = attacker.pieceMoves(board, pos);
+                    for (ChessMove move : moves) {
+                        if (move.getEndPosition().equals(kingPosition)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void copyBoard(ChessBoard target, ChessBoard source) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition pos = new ChessPosition(row, col);
+                target.addPiece(pos, source.getPiece(pos));
+            }
+        }
+    }
+
     public ChessGame() {
         this.board = new ChessBoard();
         this.board.resetBoard(); // Sets up the default starting position
@@ -50,7 +90,31 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        throw new RuntimeException("Not implemented");
+        ChessPiece piece = board.getPiece(startPosition);
+        if (piece == null) {
+            return null;
+        }
+
+        Collection<ChessMove> potentialMoves = piece.pieceMoves(board, startPosition);
+        Collection<ChessMove> validMoves = new ArrayList<>();
+
+        for (ChessMove move : potentialMoves) {
+            // Make a copy of the board
+            ChessBoard simulatedBoard = new ChessBoard();
+            copyBoard(simulatedBoard, board);
+
+            // Simulate the move
+            simulatedBoard.addPiece(move.getEndPosition(), piece);
+            simulatedBoard.addPiece(startPosition, null);
+
+            // Check if move leaves king in check
+            ChessPosition kingPosition = findKingPosition(piece.getTeamColor(), simulatedBoard);
+            if (!isInCheck(piece.getTeamColor(), simulatedBoard, kingPosition)) {
+                validMoves.add(move);
+            }
+        }
+
+        return validMoves;
     }
 
     /**
