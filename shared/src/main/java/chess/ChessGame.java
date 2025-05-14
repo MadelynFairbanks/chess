@@ -52,6 +52,24 @@ public class ChessGame {
         }
     }
 
+    private boolean Checking(TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition pos = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(pos);
+
+                if (piece != null && piece.getTeamColor() == teamColor) {
+                    Collection<ChessMove> moves = validMoves(pos);
+                    if (moves != null && !moves.isEmpty()) {
+                        return false; // Found a legal move
+                    }
+                }
+            }
+        }
+
+        return true; // No legal moves and not in check
+    }
+
     public ChessGame() {
         this.board = new ChessBoard();
         this.board.resetBoard(); // Sets up the default starting position
@@ -177,21 +195,7 @@ public class ChessGame {
         }
 
         // Try every move by every piece of the team
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                ChessPosition pos = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(pos);
-
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    Collection<ChessMove> moves = validMoves(pos);
-                    if (moves != null && !moves.isEmpty()) {
-                        return false; // There exists a legal escape
-                    }
-                }
-            }
-        }
-
-        return true; // No legal escape moves
+        return Checking(teamColor);
     }
 
     /**
@@ -202,9 +206,14 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (isInCheck(teamColor)) {
+            return false;
+        }
+
+        return Checking(teamColor);
     }
 
+    
     /**
      * Sets this game's chessboard with a given board
      *
