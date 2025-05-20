@@ -1,7 +1,7 @@
 package chess;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -13,12 +13,39 @@ import java.util.Objects;
 public class ChessPiece {
     private final ChessGame.TeamColor teamColor;
     private final PieceType pieceType;
-    private boolean isOnBoard(ChessPosition pos) {
-        int row = pos.getRow();
-        int col = pos.getColumn();
+    private boolean isOnBoard(ChessPosition position) {
+        int row = position.getRow();
+        int col = position.getColumn();
         return row >= 1 && row <= 8 && col >= 1 && col <= 8;
     }
-    private void addSlidingAcrossTheBoardMoves(ChessBoard board, ChessPosition myPosition, Collection<ChessMove> validMoves, int[][] directions) {
+    private void addPromotionMovesIfPromotionOccurs(ChessPosition myCurrentPosition,
+                                                    Collection<ChessMove> validMoves,
+                                                    ChessPosition oneSpotForward) {
+        int targetRow = oneSpotForward.getRow();
+        boolean isPromotionTime = (teamColor == ChessGame.TeamColor.WHITE && targetRow == 8)
+                || (teamColor == ChessGame.TeamColor.BLACK && targetRow == 1);
+        if (isPromotionTime) {
+            validMoves.add(new ChessMove(myCurrentPosition, oneSpotForward, PieceType.QUEEN));
+            validMoves.add(new ChessMove(myCurrentPosition, oneSpotForward, PieceType.KNIGHT));
+            validMoves.add(new ChessMove(myCurrentPosition, oneSpotForward, PieceType.ROOK));
+            validMoves.add(new ChessMove(myCurrentPosition, oneSpotForward, PieceType.BISHOP));
+        } else {
+            validMoves.add(new ChessMove(myCurrentPosition, oneSpotForward, null));
+        }
+
+    }
+    private void tryAddMove(ChessBoard board, ChessPosition myCurrentPosition,
+                            Collection<ChessMove> validMoves, int newRow, int newCol) {
+        ChessPosition target = new ChessPosition(newRow, newCol);
+        if (isOnBoard(target)) {
+            ChessPiece occupantOfSpot = board.getPiece(target);
+            if (occupantOfSpot == null || occupantOfSpot.getTeamColor() != this.teamColor) {
+                validMoves.add(new ChessMove(myCurrentPosition, target, null));
+            }
+        }
+    }
+    private void addSlidingMoves(ChessBoard board, ChessPosition myPosition,
+                                 Collection<ChessMove> validMoves, int[][] directions) {
         int row = myPosition.getRow();
         int col = myPosition.getColumn();
         for (int[] dir : directions) {
@@ -26,11 +53,11 @@ public class ChessPiece {
             int c = col + dir[1];
             while (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
                 ChessPosition target = new ChessPosition(r, c);
-                ChessPiece occupant = board.getPiece(target);
-                if (occupant == null) {
+                ChessPiece occupantOfSpot = board.getPiece(target);
+                if (occupantOfSpot == null) {
                     validMoves.add(new ChessMove(myPosition, target, null));
                 } else {
-                    if (occupant.getTeamColor() != this.teamColor) {
+                    if (occupantOfSpot.getTeamColor() != this.teamColor) {
                         validMoves.add(new ChessMove(myPosition, target, null));
                     }
                     break;
@@ -41,16 +68,6 @@ public class ChessPiece {
         }
     }
 
-    private void tryAddMove(ChessBoard board, ChessPosition myPosition, Collection<ChessMove> validMoves, int newRow, int newCol) {
-        ChessPosition target = new ChessPosition(newRow, newCol);
-
-        if (isOnBoard(target)) {
-            ChessPiece occupant = board.getPiece(target);
-            if (occupant == null || occupant.getTeamColor() != this.teamColor) {
-                validMoves.add(new ChessMove(myPosition, target, null));
-            }
-        }
-    }
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.teamColor = pieceColor;
         this.pieceType = type;
@@ -91,91 +108,71 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         Collection<ChessMove> validMoves = new ArrayList<>();
+        // the valid moves of a PAWN:
         if (pieceType == PieceType.PAWN) {
-            int row = myPosition.getRow();
             int col = myPosition.getColumn();
-            int direction = (teamColor == ChessGame.TeamColor.WHITE) ? 1 : -1;
-
-            // if the spot in front is empty, able to move forward by 1
-            ChessPosition oneSpotForward = new ChessPosition(row + direction, col);
+            int row = myPosition.getRow();
+            // if it's white then it should move positive one to go forward and if
+            // it's not white it should move negative one to go forward
+            int pawnDirection = (teamColor == ChessGame.TeamColor.WHITE) ? 1:-1;
+            // if the spot in front is on the board and there isnt another piece there, move forward
+            ChessPosition oneSpotForward = new ChessPosition(row + pawnDirection, col);
             if (isOnBoard(oneSpotForward) && board.getPiece(oneSpotForward) == null) {
-                addPromotionMovesIfNeeded(myPosition, validMoves, oneSpotForward);
+                // move forward but also we need to take into account whether its a promotion piece or not
+                addPromotionMovesIfPromotionOccurs(myPosition, validMoves, oneSpotForward);
+                // pawns can double move if it's their first move of the game / if its the starting move
+                int startRow = (teamColor == ChessGame.TeamColor.WHITE) ? 2 : 7;
+                ChessPosition twoSpotsForward = new ChessPosition(row + 2 * pawnDirection, col);
+                // if there is no piece one or two spots ahead of the pawn on its first move then it can go two spots forward
+                if (row == startRow && board.getPiece(oneSpotForward) == null && board.getPiece(twoSpotsForward) == null) {
+                    validMoves.add(new ChessMove(myPosition, twoSpotsForward, null));
+                }
+
             }
-            // if the pawn is at the starting row then it can move 2 forward as long as the spot is open
-            int startRow = (teamColor == ChessGame.TeamColor.WHITE) ? 2 : 7; // this tells the starting row depending on what color
-            ChessPosition twoSpotsForward = new ChessPosition(row + 2 * direction, col);
-            if (row == startRow && board.getPiece(oneSpotForward) == null && board.getPiece(twoSpotsForward) == null) {
-                validMoves.add(new ChessMove(myPosition, twoSpotsForward, null));
-            }
-            // Pawns can also move diagonally when capturing other pieces
+            // Pawns can also move diagonally if capturing another piece
             int[] columnOffsets = {-1, 1};
             for (int offset : columnOffsets) {
-                ChessPosition diagonal = new ChessPosition(row + direction, col + offset);
-                if (isOnBoard(diagonal)) {
+                ChessPosition diagonal = new ChessPosition(row + pawnDirection, col + offset);
+                if (isOnBoard(diagonal)){
                     ChessPiece targetPiece = board.getPiece(diagonal);
                     if (targetPiece != null && targetPiece.getTeamColor() != this.teamColor) {
-                        addPromotionMovesIfNeeded(myPosition, validMoves, diagonal);
+                        addPromotionMovesIfPromotionOccurs(myPosition, validMoves, diagonal);
                     }
                 }
             }
-        } else if (pieceType == PieceType.KNIGHT) {
-            int[][] offsets = {
-                    {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
-                    {1, -2}, {1, 2}, {2, -1}, {2, 1}
-            };
 
-            for (int[] offset : offsets) {
+            } else if (pieceType == PieceType.KNIGHT) {
+            // Knights move in an L shape in any direction and can jump over other pieces
+            int[][] offsets = {{-2,-1}, {-2,1}, {-1,-2}, {-1, 2},
+                    {1,-2}, {1, 2}, {2, -1}, {2, 1}};
+            for (int[] offset: offsets) {
                 int newRow = myPosition.getRow() + offset[0];
                 int newCol = myPosition.getColumn() + offset[1];
                 tryAddMove(board, myPosition, validMoves, newRow, newCol);
             }
         } else if (pieceType == PieceType.ROOK) {
-            int[][] rookDirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-            addSlidingAcrossTheBoardMoves(board, myPosition, validMoves, rookDirs);
-
+            int[][] rookDirections = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            addSlidingMoves(board, myPosition, validMoves, rookDirections);
         } else if (pieceType == PieceType.BISHOP) {
-            int[][] bishopDirs = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-            addSlidingAcrossTheBoardMoves(board, myPosition, validMoves, bishopDirs);
-
+            int[][] bishopDirections = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            addSlidingMoves(board, myPosition, validMoves, bishopDirections);
         } else if (pieceType == PieceType.QUEEN) {
-            int[][] queenDirs = {
-                    {-1, 0}, {1, 0}, {0, -1}, {0, 1},
-                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
-            };
-            addSlidingAcrossTheBoardMoves(board, myPosition, validMoves, queenDirs);
+            int[][] queenDirections = {{-1, 0}, {1, 0}, {0, -1}, {0, 1},
+                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            addSlidingMoves(board, myPosition, validMoves, queenDirections);
         } else if (pieceType == PieceType.KING) {
-            int[][] directions = {
-                    {-1, 0}, {1, 0}, {0, -1}, {0, 1},     // up, down, left, right
-                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}    // diagonals
-            };
-
+            int[][] kingDirections = {{-1, 0}, {1, 0}, {0, -1},
+                    {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
             int row = myPosition.getRow();
-            int col = myPosition.getColumn();
-
-            for (int[] dir : directions) {
-                int newRow = row + dir[0];
-                int newCol = col + dir[1];
+            int column = myPosition.getColumn();
+            for (int[] direction: kingDirections) {
+                int newRow = row + direction[0];
+                int newCol = column + direction[1];
                 tryAddMove(board, myPosition, validMoves, newRow, newCol);
             }
         }
-
         return validMoves;
     }
-
-    private void addPromotionMovesIfNeeded(ChessPosition myPosition, Collection<ChessMove> validMoves, ChessPosition oneSpotForward) {
-        int targetRow = oneSpotForward.getRow();
-        boolean isPromotion = (teamColor == ChessGame.TeamColor.WHITE && targetRow == 8) ||
-                (teamColor == ChessGame.TeamColor.BLACK && targetRow == 1);
-        if (isPromotion) {
-            validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.QUEEN));
-            validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.ROOK));
-            validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.BISHOP));
-            validMoves.add(new ChessMove(myPosition, oneSpotForward, PieceType.KNIGHT));
-        } else {
-            validMoves.add(new ChessMove(myPosition, oneSpotForward, null));
-        }
-    }
-
 
     @Override
     public boolean equals(Object o) {
@@ -194,5 +191,5 @@ public class ChessPiece {
     public String toString() {
         return teamColor + " " + pieceType;
     }
-
 }
+

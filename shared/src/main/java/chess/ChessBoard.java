@@ -11,7 +11,7 @@ import java.util.Objects;
 public class ChessBoard {
     private ChessPiece[][] squares = new ChessPiece[8][8];
     public ChessBoard() {
-        
+
     }
 
     /**
@@ -21,8 +21,8 @@ public class ChessBoard {
      * @param piece    the piece to add
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
-        int row = position.getRow() -1;
-        int col = position.getColumn() -1;
+        int row = position.getRow() - 1;
+        int col = position.getColumn() - 1;
         squares[row][col] = piece;
     }
 
@@ -44,20 +44,20 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        squares = new ChessPiece[8][8]; // Clear board
-        // Pawns
+        squares = new ChessPiece[8][8];
+        // resetting the pawns
         for (int col = 0; col < 8; col++) {
             squares[1][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
             squares[6][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
         }
-        // all the other pieces
+        // resetting all the other pieces
         ChessPiece.PieceType[] order = {
                 ChessPiece.PieceType.ROOK, ChessPiece.PieceType.KNIGHT, ChessPiece.PieceType.BISHOP,
                 ChessPiece.PieceType.QUEEN, ChessPiece.PieceType.KING, ChessPiece.PieceType.BISHOP,
                 ChessPiece.PieceType.KNIGHT, ChessPiece.PieceType.ROOK
         };
 
-        // placing in the right spot according to color
+        //placing them in the right spot depending on if they are white or black
         for (int col = 0; col < 8; col++) {
             squares[0][col] = new ChessPiece(ChessGame.TeamColor.WHITE, order[col]);
             squares[7][col] = new ChessPiece(ChessGame.TeamColor.BLACK, order[col]);
@@ -92,6 +92,4 @@ public class ChessBoard {
         }
         return result;
     }
-
-
 }

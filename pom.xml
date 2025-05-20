@@ -3,15 +3,23 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>edu.byu.cs240</groupId>
-    <artifactId>starter-code</artifactId>
+    <artifactId>chess</artifactId>
     <version>1.0.0</version>
-    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>shared</module>
+        <module>client</module>
+        <module>server</module>
+    </modules>
+
 
     <dependencies>
         <dependency>
@@ -23,7 +31,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.9.2</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

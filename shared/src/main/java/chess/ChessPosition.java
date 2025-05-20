@@ -1,22 +1,20 @@
 package chess;
 
+import java.util.Objects;
+
 /**
  * Represents a single square position on a chess board
  * <p>
  * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
  */
-
-import java.util.Objects;
-
 public class ChessPosition {
-
     private final int row;
-    private final int col;
+    private final int column;
 
-    public ChessPosition(int row, int col) {
+    public ChessPosition(int row, int column) {
         this.row = row;
-        this.col = col;
+        this.column = column;
     }
 
     /**
@@ -32,7 +30,7 @@ public class ChessPosition {
      * 1 codes for the left row
      */
     public int getColumn() {
-        return col;
+        return column;
     }
 
     @Override
@@ -40,16 +38,16 @@ public class ChessPosition {
         if (this == o) return true;
         if (!(o instanceof ChessPosition)) return false;
         ChessPosition that = (ChessPosition) o;
-        return row == that.row && col == that.col;
+        return row == that.row && column == that.column;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(row, col);
+        return Objects.hash(row, column);
     }
 
     @Override
     public String toString() {
-        return "(" + row + "," + col + ")";
+        return "(" + row + "," + column + ")";
     }
 }

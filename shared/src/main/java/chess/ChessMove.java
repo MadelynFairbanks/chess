@@ -1,6 +1,7 @@
 package chess;
 
 import java.util.Objects;
+
 /**
  * Represents moving a chess piece on a chessboard
  * <p>
@@ -64,4 +65,3 @@ public class ChessMove {
                 (promotionPiece != null ? "promote to " + promotionPiece : "");
     }
 }
-
