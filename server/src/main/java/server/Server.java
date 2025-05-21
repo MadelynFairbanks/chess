@@ -25,9 +25,11 @@ public class Server {
         UserService userService = new UserService(memoryData);
         RegisterHandler registerHandler = new RegisterHandler(userService);
         LoginHandler loginHandler = new LoginHandler(userService);
-
+        LogoutHandler logoutHandler = new LogoutHandler(userService);
+        
         Spark.post("/user", registerHandler);
         Spark.post("/session", loginHandler);
+        Spark.delete("/session", logoutHandler);
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
         Spark.init();
