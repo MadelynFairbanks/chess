@@ -3,6 +3,8 @@ package server;
 import spark.*;
 import dataaccess.MemoryDataAccess;
 import service.ClearService;
+import server.RegisterHandler;
+import service.UserService;
 
 public class Server {
 
@@ -11,12 +13,18 @@ public class Server {
         Spark.staticFiles.location("web");
 
         MemoryDataAccess memoryData = new MemoryDataAccess();
-        ClearService clearService = new ClearService(memoryData);
-        ClearHandler clearHandler = new ClearHandler(clearService);
-
-        Spark.delete("/db", clearHandler);
 
         // Register your endpoints and handle exceptions here.
+
+        // Clear endpoint
+        ClearService clearService = new ClearService(memoryData);
+        ClearHandler clearHandler = new ClearHandler(clearService);
+        Spark.delete("/db", clearHandler);
+
+        // Register endpoint
+        UserService userService = new UserService(memoryData);
+        RegisterHandler registerHandler = new RegisterHandler(userService);
+        Spark.post("/user", registerHandler);
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
         Spark.init();
