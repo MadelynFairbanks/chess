@@ -33,4 +33,19 @@ public class UserService {
 
         return auth;
     }
+
+    public AuthData login(UserData user) throws DataAccessException {
+        if (user == null || user.username() == null || user.password() == null) {
+            throw new DataAccessException("Error: bad request");
+        }
+
+        UserData existing = dataAccess.getUser(user.username());
+        if (existing == null || !existing.password().equals(user.password())) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+
+        AuthData auth = new AuthData(UUID.randomUUID().toString(), user.username());
+        dataAccess.createAuth(auth);
+        return auth;
+    }
 }
