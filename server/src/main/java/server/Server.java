@@ -5,6 +5,8 @@ import dataaccess.MemoryDataAccess;
 import service.ClearService;
 import server.RegisterHandler;
 import service.UserService;
+import server.CreateGameHandler;
+import service.GameService;
 
 public class Server {
 
@@ -26,10 +28,14 @@ public class Server {
         RegisterHandler registerHandler = new RegisterHandler(userService);
         LoginHandler loginHandler = new LoginHandler(userService);
         LogoutHandler logoutHandler = new LogoutHandler(userService);
-        
+
+        GameService gameService = new GameService(memoryData);
+        CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
+
         Spark.post("/user", registerHandler);
         Spark.post("/session", loginHandler);
         Spark.delete("/session", logoutHandler);
+        Spark.post("/game", createGameHandler);
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
         Spark.init();
