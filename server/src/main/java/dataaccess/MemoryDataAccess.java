@@ -3,7 +3,8 @@ package dataaccess;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -69,7 +70,7 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
-    public GameData[] listGames() {
-        return games.values().toArray(new GameData[0]);
+    public List<GameData> listGames() {
+        return new ArrayList<>(games.values());
     }
 }

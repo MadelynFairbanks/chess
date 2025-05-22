@@ -6,6 +6,7 @@ import model.AuthData;
 import model.GameData;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 public class GameService {
     private final DataAccess dataAccess;
@@ -30,5 +31,18 @@ public class GameService {
 
         dataAccess.createGame(game);
         return gameID;
+    }
+
+    public List<GameData> listGames(String authToken) throws DataAccessException {
+        if (authToken == null) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+
+        var auth = dataAccess.getAuth(authToken);
+        if (auth == null) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+
+        return dataAccess.listGames();
     }
 }
