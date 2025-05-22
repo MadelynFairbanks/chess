@@ -67,7 +67,9 @@ public class ChessBoard {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ChessBoard)) return false;
+        if (!(o instanceof ChessBoard)) {
+            return false;
+        }
         ChessBoard other = (ChessBoard) o;
 
         for (int row = 0; row < 8; row++) {

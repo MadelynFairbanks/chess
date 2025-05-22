@@ -54,7 +54,7 @@ public class ChessGame {
         }
     }
 
-    private boolean Checking(TeamColor teamColor) {
+    private boolean checking(TeamColor teamColor) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
@@ -197,7 +197,7 @@ public class ChessGame {
         }
 
         // Try every move by every piece of the team
-        return Checking(teamColor);
+        return checking(teamColor);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ChessGame {
             return false;
         }
 
-        return Checking(teamColor);
+        return checking(teamColor);
     }
 
 
@@ -236,8 +236,12 @@ public class ChessGame {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ChessGame other)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ChessGame other)) {
+            return false;
+        }
         return board.equals(other.board) && teamTurn == other.teamTurn;
     }
 
