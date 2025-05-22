@@ -15,6 +15,7 @@ public class MemoryDataAccess implements DataAccess {
     private final Map<Integer, GameData> games = new HashMap<>();
     private int nextGameID = 1;
 
+
     @Override
     public void clear() {
         users.clear();
@@ -72,5 +73,10 @@ public class MemoryDataAccess implements DataAccess {
     @Override
     public List<GameData> listGames() {
         return new ArrayList<>(games.values());
+    }
+
+    @Override
+    public int generateGameID() {
+        return nextGameID++;
     }
 }
