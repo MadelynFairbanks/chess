@@ -4,21 +4,9 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Objects;
 
-/**
- * For a class that can manage a chess game, making moves on a board
- * <p>
- * Note: You can add to this class, but you may not alter
- * signature of the existing methods.
- */
 public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
-
-    public ChessGame() {
-        this.board = new ChessBoard();
-        this.board.resetBoard(); // Sets up the default starting position
-        this.teamTurn = TeamColor.WHITE; // White always starts
-    }
 
     private ChessPosition findKingPosition(TeamColor color, ChessBoard board) {
         for (int row = 1; row <= 8; row++) {
@@ -64,28 +52,28 @@ public class ChessGame {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(pos);
-
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    Collection<ChessMove> moves = validMoves(pos);
-                    if (moves != null && !moves.isEmpty()) {
-                        return false; // Found a legal move
-                    }
+                if (hasLegalMoves(teamColor, pos)) {
+                    return false; // Found a legal move
                 }
             }
         }
         return true; // No legal moves and not in check
     }
 
-    private boolean isMoveSafe(ChessPosition start, ChessMove move, ChessPiece piece) {
-        ChessBoard simulatedBoard = new ChessBoard();
-        copyBoard(simulatedBoard, board);
+    // <-- This is the **only** new helper method added to reduce nesting depth -->
+    private boolean hasLegalMoves(TeamColor teamColor, ChessPosition pos) {
+        ChessPiece piece = board.getPiece(pos);
+        if (piece != null && piece.getTeamColor() == teamColor) {
+            Collection<ChessMove> moves = validMoves(pos);
+            return moves != null && !moves.isEmpty();
+        }
+        return false;
+    }
 
-        simulatedBoard.addPiece(move.getEndPosition(), piece);
-        simulatedBoard.addPiece(start, null);
-
-        ChessPosition kingPosition = findKingPosition(piece.getTeamColor(), simulatedBoard);
-        return !isInCheck(piece.getTeamColor(), simulatedBoard, kingPosition);
+    public ChessGame() {
+        this.board = new ChessBoard();
+        this.board.resetBoard(); // Sets up the default starting position
+        this.teamTurn = TeamColor.WHITE; // White always starts
     }
 
     public TeamColor getTeamTurn() {
@@ -111,7 +99,14 @@ public class ChessGame {
         Collection<ChessMove> validMoves = new ArrayList<>();
 
         for (ChessMove move : potentialMoves) {
-            if (isMoveSafe(startPosition, move, piece)) {
+            ChessBoard simulatedBoard = new ChessBoard();
+            copyBoard(simulatedBoard, board);
+
+            simulatedBoard.addPiece(move.getEndPosition(), piece);
+            simulatedBoard.addPiece(startPosition, null);
+
+            ChessPosition kingPosition = findKingPosition(piece.getTeamColor(), simulatedBoard);
+            if (!isInCheck(piece.getTeamColor(), simulatedBoard, kingPosition)) {
                 validMoves.add(move);
             }
         }
@@ -175,8 +170,12 @@ public class ChessGame {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ChessGame other)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ChessGame other)) {
+            return false;
+        }
         return board.equals(other.board) && teamTurn == other.teamTurn;
     }
 
