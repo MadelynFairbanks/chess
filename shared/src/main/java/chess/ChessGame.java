@@ -25,15 +25,23 @@ public class ChessGame {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
-                ChessPiece attacker = board.getPiece(pos);
-                if (attacker != null && attacker.getTeamColor() != color) {
-                    Collection<ChessMove> moves = attacker.pieceMoves(board, pos);
-                    for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            return true;
-                        }
-                    }
+                if (isAttackingKing(pos, color, board, kingPosition)) {
+                    return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    private boolean isAttackingKing(ChessPosition pos, TeamColor color, ChessBoard board, ChessPosition kingPosition) {
+        ChessPiece attacker = board.getPiece(pos);
+        if (attacker == null || attacker.getTeamColor() == color) {
+            return false;
+        }
+        Collection<ChessMove> moves = attacker.pieceMoves(board, pos);
+        for (ChessMove move : moves) {
+            if (move.getEndPosition().equals(kingPosition)) {
+                return true;
             }
         }
         return false;
