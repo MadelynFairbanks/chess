@@ -25,6 +25,16 @@ public class RegisterHandler implements Route {
     public Object handle(Request req, Response res) {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
+
+            // Validate input: all fields must be non-null and non-blank
+            if (request == null ||
+                    request.username() == null || request.username().isBlank() ||
+                    request.password() == null || request.password().isBlank() ||
+                    request.email() == null || request.email().isBlank()) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Error: bad request"));
+            }
+
             UserData user = new UserData(request.username(), request.password(), request.email());
             AuthData auth = service.register(user);
 

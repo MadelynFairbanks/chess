@@ -35,7 +35,9 @@ public class UserService {
     }
 
     public AuthData login(UserData user) throws DataAccessException {
-        if (user == null || user.username() == null || user.password() == null) {
+        if (user == null ||
+                user.username() == null || user.username().trim().isEmpty() || user.username().equalsIgnoreCase("null") ||
+                user.password() == null || user.password().trim().isEmpty() || user.password().equalsIgnoreCase("null")) {
             throw new DataAccessException("Error: bad request");
         }
 
