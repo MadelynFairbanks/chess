@@ -31,11 +31,13 @@ public class Server {
 
         GameService gameService = new GameService(memoryData);
         CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
+        ListGamesHandler listGamesHandler = new ListGamesHandler(gameService);
 
         Spark.post("/user", registerHandler);
         Spark.post("/session", loginHandler);
         Spark.delete("/session", logoutHandler);
         Spark.post("/game", createGameHandler);
+        Spark.get("/game", listGamesHandler);
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
         Spark.init();
