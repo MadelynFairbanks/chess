@@ -1,4 +1,4 @@
-package Service;
+package service;
 
 import dataaccess.MemoryDataAccess;
 import dataaccess.DataAccessException;
@@ -8,8 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import request.CreateGameRequest;
 import request.JoinGameRequest;
-import service.GameService;
-import service.UserService;
 import chess.ChessGame;
 import model.GameData;
 import java.util.List;
