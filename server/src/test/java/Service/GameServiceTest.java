@@ -1,4 +1,4 @@
-package passoff.server;
+package Service;
 
 import dataaccess.MemoryDataAccess;
 import dataaccess.DataAccessException;
@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import request.CreateGameRequest;
 import request.JoinGameRequest;
-import result.CreateGameResult;
 import service.GameService;
 import service.UserService;
 import chess.ChessGame;
@@ -34,31 +33,31 @@ public class GameServiceTest {
     }
 
     @Test
-    public void createGame_positive() throws Exception {
+    public void createGamePositive() throws Exception {
         var result = gameService.createGame(authToken, new CreateGameRequest("FunGame"));
         assertTrue(result.gameID() > 0);
     }
 
     @Test
-    public void createGame_negative_nullName() {
+    public void createGameNegativeNullName() {
         assertThrows(DataAccessException.class,
                 () -> gameService.createGame(authToken, new CreateGameRequest(null)));
     }
 
     @Test
-    public void listGames_positive() throws Exception {
+    public void listGamesPositive() throws Exception {
         gameService.createGame(authToken, new CreateGameRequest("TestGame"));
         List<?> games = gameService.listGames(authToken);
         assertEquals(1, games.size());
     }
 
     @Test
-    public void listGames_negative_badAuth() {
+    public void listGamesNegativeBadAuth() {
         assertThrows(DataAccessException.class, () -> gameService.listGames("bad-token"));
     }
 
     @Test
-    public void joinGame_positive() throws Exception {
+    public void joinGamePositive() throws Exception {
         // Manually create and register a user
         UserData user = new UserData("testUser", "pass", "email@example.com");
         dataAccess.createUser(user);
@@ -80,7 +79,7 @@ public class GameServiceTest {
     }
 
     @Test
-    public void joinGame_negative_invalidColor() throws Exception {
+    public void joinGameNegativeInvalidColor() throws Exception {
         var createResult = gameService.createGame(authToken, new CreateGameRequest("BadColorGame"));
         var badRequest = new JoinGameRequest(authToken, createResult.gameID());
         assertThrows(DataAccessException.class, () -> gameService.joinGame(authToken, badRequest));

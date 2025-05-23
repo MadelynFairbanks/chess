@@ -1,4 +1,4 @@
-package passoff.server;
+package Service;
 
 import dataaccess.MemoryDataAccess;
 import dataaccess.DataAccessException;
@@ -19,7 +19,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void register_positive() throws DataAccessException {
+    public void registerPositive() throws DataAccessException {
         UserData user = new UserData("alice", "password", "alice@email.com");
         AuthData auth = userService.register(user);
         assertEquals("alice", auth.username());
@@ -27,14 +27,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void register_negative_duplicateUsername() throws DataAccessException {
+    public void registerNegativeDuplicateUsername() throws DataAccessException {
         UserData user = new UserData("bob", "pass", "bob@email.com");
         userService.register(user);
         assertThrows(DataAccessException.class, () -> userService.register(user));
     }
 
     @Test
-    public void login_positive() throws DataAccessException {
+    public void loginPositive() throws DataAccessException {
         UserData user = new UserData("carol", "pw123", "c@email.com");
         userService.register(user);
         AuthData auth = userService.login(user);
@@ -42,7 +42,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void login_negative_wrongPassword() throws DataAccessException {
+    public void loginNegativeWrongPassword() throws DataAccessException {
         UserData user = new UserData("dave", "1234", "d@email.com");
         userService.register(user);
         UserData wrong = new UserData("dave", "wrong", "d@email.com");
@@ -50,14 +50,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void logout_positive() throws DataAccessException {
+    public void logoutPositive() throws DataAccessException {
         UserData user = new UserData("john", "secret", "john@example.com");
         AuthData auth = userService.register(user);
         assertDoesNotThrow(() -> userService.logout(auth.authToken()));
     }
 
     @Test
-    public void logout_negative_invalidToken() {
+    public void logoutNegativeInvalidToken() {
         assertThrows(DataAccessException.class, () -> userService.logout("fake-token"));
     }
 }

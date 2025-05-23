@@ -1,7 +1,6 @@
-package passoff.server;
+package Service;
 
 import dataaccess.MemoryDataAccess;
-import dataaccess.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import service.ClearService;
@@ -17,12 +16,12 @@ public class ClearServiceTest {
     }
 
     @Test
-    public void clear_positive() {
+    public void clearApplicationPositive() {
         assertDoesNotThrow(() -> clearService.clearApplication());
     }
 
     @Test
-    public void clear_negative() {
+    public void clearApplicationNegative() {
         // Not really a "negative" case — should still succeed
         assertDoesNotThrow(() -> clearService.clearApplication());
     }
