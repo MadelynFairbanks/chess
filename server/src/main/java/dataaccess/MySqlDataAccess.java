@@ -3,46 +3,59 @@ package dataaccess;
 import model.AuthData;
 import model.UserData;
 import model.GameData;
-import java.util.Collection;
-import java.util.ArrayList;
+
+import java.sql.*;
 import java.util.List;
 
 public class MySqlDataAccess implements DataAccess {
     private final MySqlUserDAO userDAO = new MySqlUserDAO();
-    private final MySqlAuthTokenDAO authDAO = new MySqlAuthTokenDAO(); // you’ll create this next
+    private final MySqlAuthTokenDAO authDAO = new MySqlAuthTokenDAO();
+    private final MySqlGameDAO gameDAO = new MySqlGameDAO();
 
     @Override
-    public int generateGameID() {
-        // We'll implement this properly when we get to games
-        return 0;
+    public int generateGameID() throws DataAccessException {
+        String sql = "INSERT INTO games (gameName, game) VALUES ('temp', '{}')";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            stmt.executeUpdate();
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
+            } else {
+                throw new DataAccessException("Failed to generate game ID");
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error generating game ID", e);
+        }
     }
+
     @Override
     public List<GameData> listGames() throws DataAccessException {
-        return new ArrayList<>();
+        return gameDAO.listGames();
     }
 
     @Override
     public void clear() throws DataAccessException {
-        // Implement later
-        throw new UnsupportedOperationException("Not implemented yet");
+        gameDAO.clear();
+        userDAO.clear();
+        authDAO.clear();
     }
 
     @Override
     public void createGame(GameData game) throws DataAccessException {
-        throw new UnsupportedOperationException("Not implemented yet");
+        gameDAO.insertGame(game);
     }
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return gameDAO.findGame(gameID);
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        throw new UnsupportedOperationException("Not implemented yet");
+        gameDAO.updateGame(game);
     }
-
-
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
@@ -68,6 +81,4 @@ public class MySqlDataAccess implements DataAccess {
     public void deleteAuth(String token) throws DataAccessException {
         authDAO.deleteAuth(token);
     }
-
-    // Add stub methods for games if required later
 }

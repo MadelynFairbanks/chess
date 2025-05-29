@@ -25,6 +25,16 @@ public class MySqlAuthTokenDAO {
         }
     }
 
+    public void clear() throws DataAccessException {
+        String sql = "DELETE FROM auth_tokens";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to clear auth tokens", e);
+        }
+    }
+
     public AuthData findAuth(String token) throws DataAccessException {
         String sql = "SELECT * FROM auth_tokens WHERE token = ?";
 

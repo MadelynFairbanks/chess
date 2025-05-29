@@ -29,6 +29,16 @@ public class MySqlUserDAO {
         }
     }
 
+    public void clear() throws DataAccessException {
+        String sql = "DELETE FROM users";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to clear users", e);
+        }
+    }
+
     public UserData findUser(String username) throws DataAccessException {
         String sql = "SELECT * FROM users WHERE username = ?";
 
