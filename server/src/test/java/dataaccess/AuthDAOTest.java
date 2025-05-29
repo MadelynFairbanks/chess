@@ -1,7 +1,14 @@
 package dataaccess;
 
 import model.AuthData;
-import org.junit.jupiter.api.*;
+import model.UserData;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,8 +18,37 @@ public class AuthDAOTest {
 
     @BeforeEach
     public void setup() throws DataAccessException {
+        // Create database and tables
         DatabaseManager.createDatabase();
         DatabaseManager.createTables();
+
+        // Clear tables in correct order (auth_tokens depends on users)
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM auth_tokens");
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to clear tables", e);
+        }
+
+        // Insert users
+        MySqlUserDAO userDAO = new MySqlUserDAO();
+        userDAO.insertUser(new UserData("alice", "alice@gmail.com", "password123"));
+        userDAO.insertUser(new UserData("bob", "bob@gmail.com", "password123"));
+        userDAO.insertUser(new UserData("carol", "carol@gmail.com", "password123"));
+        userDAO.insertUser(new UserData("dave", "dave@gmail.com", "password123"));
+
+        // Debug: print inserted users
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM users")) {
+            while (rs.next()) {
+                System.out.println("User in DB: " + rs.getString("username"));
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to print debug users", e);
+        }
+
         authDAO = new MySqlAuthDAO();
     }
 

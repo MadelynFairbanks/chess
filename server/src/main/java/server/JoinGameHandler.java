@@ -21,7 +21,7 @@ public class JoinGameHandler implements Route {
     @Override
     public Object handle(Request req, Response res) {
         try {
-            String authToken = req.headers("authorization");
+            String authToken = req.headers("Authorization");
             JoinGameRequest request = gson.fromJson(req.body(), JoinGameRequest.class);
             service.joinGame(authToken, request);
 
