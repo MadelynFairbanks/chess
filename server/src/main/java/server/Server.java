@@ -7,6 +7,7 @@ import server.RegisterHandler;
 import service.UserService;
 import server.CreateGameHandler;
 import service.GameService;
+import dataaccess.MySqlDataAccess;
 
 public class Server {
 
@@ -14,22 +15,23 @@ public class Server {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
 
-        MemoryDataAccess memoryData = new MemoryDataAccess();
+        MySqlDataAccess mySqlData = new MySqlDataAccess();
+
 
         // Register your endpoints and handle exceptions here.
 
         // Clear endpoint
-        ClearService clearService = new ClearService(memoryData);
+        ClearService clearService = new ClearService(mySqlData);
         ClearHandler clearHandler = new ClearHandler(clearService);
         Spark.delete("/db", clearHandler);
 
         // Register endpoint
-        UserService userService = new UserService(memoryData);
+        UserService userService = new UserService(mySqlData);
         RegisterHandler registerHandler = new RegisterHandler(userService);
         LoginHandler loginHandler = new LoginHandler(userService);
         LogoutHandler logoutHandler = new LogoutHandler(userService);
 
-        GameService gameService = new GameService(memoryData);
+        GameService gameService = new GameService(mySqlData);
         CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
         ListGamesHandler listGamesHandler = new ListGamesHandler(gameService);
         JoinGameHandler joinGameHandler = new JoinGameHandler(gameService);
