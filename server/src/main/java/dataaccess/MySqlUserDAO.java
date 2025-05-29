@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+
 
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -30,10 +32,9 @@ public class MySqlUserDAO {
     }
 
     public void clear() throws DataAccessException {
-        String sql = "DELETE FROM users";
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.executeUpdate();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM users");
         } catch (SQLException e) {
             throw new DataAccessException("Unable to clear users", e);
         }
