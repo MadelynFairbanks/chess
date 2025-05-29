@@ -1,6 +1,6 @@
 package dataaccess;
 
-import model.User;
+import model.UserData;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,7 +11,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class MySqlUserDAO {
 
-    public void insertUser(User user) throws DataAccessException {
+    public void insertUser(UserData user) throws DataAccessException {
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -29,7 +29,7 @@ public class MySqlUserDAO {
         }
     }
 
-    public User findUser(String username) throws DataAccessException {
+    public UserData findUser(String username) throws DataAccessException {
         String sql = "SELECT * FROM users WHERE username = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
@@ -41,7 +41,7 @@ public class MySqlUserDAO {
             if (rs.next()) {
                 String hashedPassword = rs.getString("password");
                 String email = rs.getString("email");
-                return new User(username, hashedPassword, email);
+                return new UserData(username, hashedPassword, email);
             } else {
                 return null;
             }
@@ -51,7 +51,7 @@ public class MySqlUserDAO {
     }
 
     public boolean verifyPassword(String username, String inputPassword) throws DataAccessException {
-        User user = findUser(username);
+        UserData user = findUser(username);
         if (user == null) return false;
 
         return BCrypt.checkpw(inputPassword, user.password());

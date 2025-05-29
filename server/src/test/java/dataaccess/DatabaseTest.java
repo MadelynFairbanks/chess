@@ -1,4 +1,5 @@
-import dataaccess.DatabaseManager;
+package dataaccess;
+
 import java.sql.Connection;
 
 public class DatabaseTest {
