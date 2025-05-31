@@ -26,30 +26,35 @@ public class JoinGameHandler implements Route {
             service.joinGame(authToken, request);
 
             res.status(200);
-            return "{}"; // success response
-        } catch (DataAccessException e) {
+            return "{}"; // success
+        }
+        catch (DataAccessException e) {
             String msg = e.getMessage();
             String lower = msg.toLowerCase();
 
-            // If the error really is "unauthorized", return 401
             if (lower.contains("unauthorized")) {
                 res.status(401);
             }
-            // If “already taken,” return 403
             else if (lower.contains("already taken")) {
                 res.status(403);
             }
-            // Everything else (e.g. "failed to get connection") → 500
+            else if (lower.contains("bad request")) {
+                // <-- new branch so "Error: bad request" yields 400
+                res.status(400);
+            }
             else {
+                // anything else (including a genuine DB failure) should be 500
                 res.status(500);
             }
 
             return gson.toJson(Map.of("message", msg));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
-
 }
+
+
 
