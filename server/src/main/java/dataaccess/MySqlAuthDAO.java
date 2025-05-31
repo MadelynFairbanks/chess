@@ -1,43 +1,22 @@
 package dataaccess;
 
 import model.AuthData;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import dataaccess.DataAccessException;
 
 public class MySqlAuthDAO {
 
+    private final MySqlAuthTokenDAO tokenDAO = new MySqlAuthTokenDAO();
+
     public void insertAuth(AuthData auth) throws DataAccessException {
-        String sql = "INSERT INTO auth_tokens (token, username) VALUES (?, ?)";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, auth.authToken());
-            stmt.setString(2, auth.username());
-
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to insert auth token", e);
-        }
+        tokenDAO.insertAuth(auth);
     }
 
     public AuthData findAuth(String token) throws DataAccessException {
-        return getAuthData(token);
+        // Delegate to the helper that lives in MySqlAuthTokenDAO:
+        return MySqlAuthTokenDAO.getAuthData(token);
     }
 
     public void deleteAuth(String token) throws DataAccessException {
-        String sql = "DELETE FROM auth_tokens WHERE token = ?";
-
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, token);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to delete auth token", e);
-        }
+        tokenDAO.deleteAuth(token);
     }
 }
