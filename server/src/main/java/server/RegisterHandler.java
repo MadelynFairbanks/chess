@@ -26,7 +26,6 @@ public class RegisterHandler implements Route {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
 
-            // Validate input: all fields must be non-null and non-blank
             if (request == null ||
                     request.username() == null || request.username().isBlank() ||
                     request.password() == null || request.password().isBlank() ||
@@ -41,14 +40,24 @@ public class RegisterHandler implements Route {
             res.status(200);
             return gson.toJson(new RegisterResult(auth.username(), auth.authToken()));
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("bad request")) {
+            String msg = e.getMessage();
+            String lower = msg.toLowerCase();
+
+            if (lower.contains("bad request")) {
                 res.status(400);
-            } else if (e.getMessage().contains("already taken")) {
+            } else if (lower.contains("already taken")) {
                 res.status(403);
+            } else if (lower.contains("internal server error")) {
+                res.status(500);
             } else {
                 res.status(500);
             }
-            return gson.toJson(Map.of("message", e.getMessage()));
+
+            if (!msg.toLowerCase().startsWith("error")) {
+                msg = "Error: " + msg;
+            }
+
+            return gson.toJson(Map.of("message", msg));
         } catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));

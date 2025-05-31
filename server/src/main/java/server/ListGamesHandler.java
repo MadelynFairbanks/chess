@@ -28,11 +28,23 @@ public class ListGamesHandler implements Route {
             res.status(200);
             return gson.toJson(new ListGamesResult(games));
         } catch (DataAccessException e) {
-            res.status(401);
-            return gson.toJson(Map.of("message", e.getMessage()));
+            String msg = e.getMessage();
+            String lower = msg.toLowerCase();
+
+            // If the exception was truly "unauthorized", return 401
+            if (lower.contains("unauthorized")) {
+                res.status(401);
+            }
+            // Otherwise treat it as an internal‐server error
+            else {
+                res.status(500);
+            }
+
+            return gson.toJson(Map.of("message", msg));
         } catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
+
 }

@@ -28,18 +28,28 @@ public class JoinGameHandler implements Route {
             res.status(200);
             return "{}"; // success response
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
+            String msg = e.getMessage();
+            String lower = msg.toLowerCase();
+
+            // If the error really is "unauthorized", return 401
+            if (lower.contains("unauthorized")) {
                 res.status(401);
-            } else if (e.getMessage().contains("already taken")) {
-                res.status(403);
-            } else {
-                res.status(400);
             }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            // If “already taken,” return 403
+            else if (lower.contains("already taken")) {
+                res.status(403);
+            }
+            // Everything else (e.g. "failed to get connection") → 500
+            else {
+                res.status(500);
+            }
+
+            return gson.toJson(Map.of("message", msg));
         } catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
+
 }
 

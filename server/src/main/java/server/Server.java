@@ -8,6 +8,7 @@ import service.UserService;
 import server.CreateGameHandler;
 import service.GameService;
 import dataaccess.MySqlDataAccess;
+import dataaccess.DataAccessException;
 
 public class Server {
 
@@ -42,6 +43,11 @@ public class Server {
         Spark.post("/game", createGameHandler);
         Spark.get("/game", listGamesHandler);
         Spark.put("/game", joinGameHandler);
+
+        Spark.exception(DataAccessException.class, (ex, req, res) -> {
+            res.status(500);
+            res.body("{\"message\":\"Database error\"}");
+        });
 
 
         //This line initializes the server and can be removed once you have a functioning endpoint 

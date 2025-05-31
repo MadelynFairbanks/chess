@@ -25,12 +25,26 @@ public class LogoutHandler implements Route {
             res.status(200);
             return gson.toJson(Map.of());
         } catch (DataAccessException e) {
-            res.status(401);
-            return gson.toJson(Map.of("message", e.getMessage()));
+            String msg = e.getMessage();
+            String lower = msg.toLowerCase();
+
+            if (lower.contains("unauthorized")) {
+                res.status(401);
+            } else if (lower.contains("internal server error")) {
+                res.status(500);
+            } else {
+                res.status(500);
+            }
+
+            // Ensure message starts with "Error: "
+            if (!msg.toLowerCase().startsWith("error")) {
+                msg = "Error: " + msg;
+            }
+
+            return gson.toJson(Map.of("message", msg));
         } catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
 }
-
