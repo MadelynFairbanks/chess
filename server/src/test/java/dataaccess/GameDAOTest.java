@@ -36,7 +36,7 @@ public class GameDAOTest {
 
 
     @Test
-    public void insertAndFindGame_success() throws DataAccessException {
+    public void insertAndFindGameSuccess() throws DataAccessException {
         GameData game = new GameData(1, "whitePlayer", "blackPlayer", "Test Game", new chess.ChessGame());
         gameDAO.insertGame(game);
 
@@ -49,7 +49,7 @@ public class GameDAOTest {
     }
 
     @Test
-    public void listGames_containsInsertedGame() throws DataAccessException {
+    public void listGamesContainsInsertedGame() throws DataAccessException {
         GameData game1 = new GameData(1, "whitePlayer", "blackPlayer", "Game One", new chess.ChessGame());
         GameData game2 = new GameData(2, "whitePlayer", "blackPlayer", "Game Two", new chess.ChessGame());
         gameDAO.insertGame(game1);

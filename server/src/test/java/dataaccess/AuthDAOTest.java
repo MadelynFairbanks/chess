@@ -53,7 +53,7 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void insertAuth_success() throws DataAccessException {
+    public void insertAuthSuccess() throws DataAccessException {
         AuthData auth = new AuthData("token123", "alice");
         authDAO.insertAuth(auth);
 
@@ -63,7 +63,7 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void insertAuth_duplicateToken() throws DataAccessException {
+    public void insertAuthDuplicateToken() throws DataAccessException {
         AuthData auth1 = new AuthData("dupeToken", "bob");
         AuthData auth2 = new AuthData("dupeToken", "carol");
 
@@ -72,13 +72,13 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void findAuth_notFound() throws DataAccessException {
+    public void findAuthNotFound() throws DataAccessException {
         AuthData result = authDAO.findAuth("nonexistent");
         assertNull(result);
     }
 
     @Test
-    public void deleteAuth_success() throws DataAccessException {
+    public void deleteAuthSuccess() throws DataAccessException {
         AuthData auth = new AuthData("toDelete", "dave");
         authDAO.insertAuth(auth);
 
@@ -87,7 +87,7 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void deleteAuth_noEffectIfMissing() throws DataAccessException {
+    public void deleteAuthNoEffectIfMissing() throws DataAccessException {
         // Should not throw, even if token doesn’t exist
         assertDoesNotThrow(() -> authDAO.deleteAuth("missingToken"));
     }

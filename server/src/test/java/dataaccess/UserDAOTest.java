@@ -17,7 +17,7 @@ public class UserDAOTest {
     }
 
     @Test
-    public void insertUser_success() throws DataAccessException {
+    public void insertUserSuccess() throws DataAccessException {
         UserData user = new UserData("alice", "password123", "alice@example.com");
         userDAO.insertUser(user);
 
@@ -30,7 +30,7 @@ public class UserDAOTest {
     }
 
     @Test
-    public void verifyPassword_success() throws DataAccessException {
+    public void verifyPasswordSuccess() throws DataAccessException {
         UserData user = new UserData("bob", "mySecret!", "bob@example.com");
         userDAO.insertUser(user);
 
@@ -38,7 +38,7 @@ public class UserDAOTest {
     }
 
     @Test
-    public void verifyPassword_failure() throws DataAccessException {
+    public void verifyPasswordFailure() throws DataAccessException {
         UserData user = new UserData("carol", "carolPass", "carol@example.com");
         userDAO.insertUser(user);
 
@@ -46,7 +46,7 @@ public class UserDAOTest {
     }
 
     @Test
-    public void insertUser_duplicateUsername() throws DataAccessException {
+    public void insertUserDuplicateUsername() throws DataAccessException {
         UserData user1 = new UserData("dave", "one", "dave@one.com");
         UserData user2 = new UserData("dave", "two", "dave@two.com");
 
