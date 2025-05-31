@@ -4,7 +4,6 @@ import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
 import model.AuthData;
 import model.GameData;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.List;
 import request.CreateGameRequest;

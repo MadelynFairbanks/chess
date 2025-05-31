@@ -13,7 +13,9 @@ public class DataAccessException extends Exception {
     }
 
     private static String prefix(String message) {
-        if (message.toLowerCase().contains("error")) return message;
+        if (message.toLowerCase().contains("error")) {
+            return message;
+        }
         return "Error: " + message;
     }
 }

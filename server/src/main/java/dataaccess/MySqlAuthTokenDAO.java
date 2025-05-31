@@ -36,6 +36,10 @@ public class MySqlAuthTokenDAO {
     }
 
     public AuthData findAuth(String token) throws DataAccessException {
+        return getAuthData(token);
+    }
+
+    static AuthData getAuthData(String token) throws DataAccessException {
         String sql = "SELECT * FROM auth_tokens WHERE token = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
