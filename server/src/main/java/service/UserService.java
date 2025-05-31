@@ -54,12 +54,14 @@ public class UserService {
     }
 
     public AuthData login(UserData user) throws DataAccessException {
+        // 1) Null/empty checks
         if (user == null ||
                 user.username() == null || user.username().trim().isEmpty() ||
                 user.password() == null || user.password().trim().isEmpty()) {
             throw new DataAccessException("Error: bad request");
         }
 
+        // 2) Fetch the stored UserData (password field is either a BCrypt hash or raw text)
         UserData existing;
         try {
             existing = dataAccess.getUser(user.username());
@@ -67,10 +69,27 @@ public class UserService {
             throw new DataAccessException("Error: internal server error", e);
         }
 
-        if (existing == null || !BCrypt.checkpw(user.password(), existing.password())) {
+        // 3) If no such user → unauthorized
+        if (existing == null) {
             throw new DataAccessException("Error: unauthorized");
         }
 
+        // 4) Compare provided password against stored value:
+        String stored = existing.password();
+        boolean matches;
+        if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
+            // MySQL‐backed DAO stored a BCrypt hash
+            matches = BCrypt.checkpw(user.password(), stored);
+        } else {
+            // MemoryDataAccess stored raw text
+            matches = stored.equals(user.password());
+        }
+
+        if (!matches) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+
+        // 5) On success, generate & persist a new auth token
         try {
             AuthData auth = new AuthData(UUID.randomUUID().toString(), user.username());
             dataAccess.createAuth(auth);
@@ -79,6 +98,7 @@ public class UserService {
             throw new DataAccessException("Error: internal server error", e);
         }
     }
+
 
     public void logout(String authToken) throws DataAccessException {
         try {
