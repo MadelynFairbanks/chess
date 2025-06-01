@@ -135,5 +135,15 @@ public class DatabaseManager {
             throw new RuntimeException("Invalid port number for database: " + portStr);
         }
     }
-    
+
+
+    private static void loadProperties(Properties props) {
+        databaseName = props.getProperty("db.name");
+        dbUsername = props.getProperty("db.user");
+        dbPassword = props.getProperty("db.password");
+
+        var host = props.getProperty("db.host");
+        var port = Integer.parseInt(props.getProperty("db.port"));
+        connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+    }
 }
