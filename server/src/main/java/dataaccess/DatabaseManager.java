@@ -92,17 +92,27 @@ public class DatabaseManager {
     }
 
     private static void loadPropertiesFromResources() {
-        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
-            if (propStream == null) {
-                throw new Exception("Unable to load db.properties");
-            }
+        try {
             Properties props = new Properties();
-            props.load(propStream);
-            loadProperties(props);
+
+            var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties");
+            if (propStream != null) {
+                props.load(propStream);
+            }
+
+            // Fallback to environment variables if not in props file
+            databaseName = props.getProperty("db.name", System.getenv("DB_NAME"));
+            dbUsername = props.getProperty("db.user", System.getenv("DB_USER"));
+            dbPassword = props.getProperty("db.password", System.getenv("DB_PASSWORD"));
+
+            var host = props.getProperty("db.host", System.getenv("DB_HOST"));
+            var port = Integer.parseInt(props.getProperty("db.port", System.getenv("DB_PORT")));
+            connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
         } catch (Exception ex) {
-            throw new RuntimeException("unable to process db.properties", ex);
+            throw new RuntimeException("unable to process db.properties or environment variables", ex);
         }
     }
+
 
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
