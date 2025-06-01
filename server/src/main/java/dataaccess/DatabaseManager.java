@@ -136,7 +136,7 @@ public class DatabaseManager {
         }
     }
 
-
+    @SuppressWarnings("unused") // Used by test harness or manual config injection
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
         dbUsername = props.getProperty("db.user");
@@ -146,4 +146,5 @@ public class DatabaseManager {
         var port = Integer.parseInt(props.getProperty("db.port"));
         connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
     }
+
 }
