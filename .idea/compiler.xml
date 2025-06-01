@@ -11,5 +11,8 @@
         <module name="shared" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="com.sparkjava:spark-core:2.9.3" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>

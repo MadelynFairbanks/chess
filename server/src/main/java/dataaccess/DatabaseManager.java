@@ -92,26 +92,53 @@ public class DatabaseManager {
     }
 
     private static void loadPropertiesFromResources() {
-        try {
-            Properties props = new Properties();
+        Properties props = new Properties();
 
-            var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties");
+        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
             if (propStream != null) {
                 props.load(propStream);
             }
+        } catch (Exception e) {
+            System.out.println("No db.properties file found — attempting to use environment variables.");
+        }
 
-            // Fallback to environment variables if not in props file
-            databaseName = props.getProperty("db.name", System.getenv("DB_NAME"));
-            dbUsername = props.getProperty("db.user", System.getenv("DB_USER"));
-            dbPassword = props.getProperty("db.password", System.getenv("DB_PASSWORD"));
+        // Prefer environment variables, fallback to props, then to hardcoded defaults
+        databaseName = System.getenv("DB_NAME");
+        if (databaseName == null) {
+            databaseName = props.getProperty("db.name", "chess");
+        }
 
-            var host = props.getProperty("db.host", System.getenv("DB_HOST"));
-            var port = Integer.parseInt(props.getProperty("db.port", System.getenv("DB_PORT")));
+        dbUsername = System.getenv("DB_USER");
+        if (dbUsername == null) {
+            dbUsername = props.getProperty("db.user", "root");
+        }
+
+        dbPassword = System.getenv("DB_PASSWORD");
+        if (dbPassword == null) {
+            dbPassword = props.getProperty("db.password", "MyChessRoot2025!");
+        }
+
+        var host = System.getenv("DB_HOST");
+        if (host == null) {
+            host = props.getProperty("db.host", "localhost");
+        }
+
+        var portStr = System.getenv("DB_PORT");
+        if (portStr == null) {
+            portStr = props.getProperty("db.port", "3306");
+        }
+
+        try {
+            int port = Integer.parseInt(portStr);
             connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
-        } catch (Exception ex) {
-            throw new RuntimeException("unable to process db.properties or environment variables", ex);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid port number for database: " + portStr);
         }
     }
+
+
+
+
 
 
     private static void loadProperties(Properties props) {
