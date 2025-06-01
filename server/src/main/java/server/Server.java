@@ -9,12 +9,21 @@ import server.CreateGameHandler;
 import service.GameService;
 import dataaccess.MySqlDataAccess;
 import dataaccess.DataAccessException;
+import dataaccess.DatabaseManager;
+
 
 public class Server {
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
+
+        try {
+            DatabaseManager.createDatabase();
+            DatabaseManager.createTables(); // ✅ Ensure tables exist before any endpoint runs
+        } catch (DataAccessException ex) {
+            ex.printStackTrace();
+        }
 
         MySqlDataAccess mySqlData = new MySqlDataAccess();
 

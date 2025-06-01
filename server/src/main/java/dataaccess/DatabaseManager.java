@@ -2,58 +2,32 @@ package dataaccess;
 
 import java.sql.*;
 import java.util.Properties;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.IOException;
-
 
 public class DatabaseManager {
-
+    private static String databaseName;
+    private static String dbUsername;
+    private static String dbPassword;
+    private static String connectionUrl;
 
     /*
      * Load the database information for the db.properties file.
      */
-    //static {
-        //loadPropertiesFromResources();
-    //}
+    static {
+        loadPropertiesFromResources();
+    }
 
     /**
      * Creates the database if it does not already exist.
      */
-    public static void createDatabase() throws DataAccessException {
-        try {
-            String user = System.getenv("DB_USER");
-            String password = System.getenv("DB_PASSWORD");
-            String database = System.getenv("DB_NAME");
-            String host = System.getenv("DB_HOST");
-            String port = System.getenv("DB_PORT");
-
-            if (user == null || password == null || database == null) {
-                var props = new Properties();
-                try (var in = Files.newInputStream(Path.of("server/src/main/resources/db.properties"))) {
-                    props.load(in);
-                }
-                user = props.getProperty("db.user", "root");
-                password = props.getProperty("db.password", "MyChessRoot2025!");
-                database = props.getProperty("db.name", "chess");
-                host = props.getProperty("db.host", "localhost");
-                port = props.getProperty("db.port", "3306");
-            }
-
-            if (host == null) host = "localhost";
-            if (port == null) port = "3306";
-
-            String connectionUrl = String.format("jdbc:mysql://%s:%s", host, port);
-            try (var conn = DriverManager.getConnection(connectionUrl, user, password);
-                 var preparedStatement = conn.prepareStatement("CREATE DATABASE IF NOT EXISTS " + database)) {
-                preparedStatement.executeUpdate();
-            }
-
-        } catch (IOException | SQLException e) {
-            throw new DataAccessException("Failed to create database", e);
+    static public void createDatabase() throws DataAccessException {
+        var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
+        try (var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+             var preparedStatement = conn.prepareStatement(statement)) {
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("failed to create database", ex);
         }
     }
-
     public static void createTables() throws DataAccessException {
         try (var conn = getConnection();
              var stmt = conn.createStatement()) {
@@ -108,34 +82,72 @@ public class DatabaseManager {
     //I added this public down here because you told me to, Chat
     public static Connection getConnection() throws DataAccessException {
         try {
-            String user = System.getenv("DB_USER");
-            String password = System.getenv("DB_PASSWORD");
-            String database = System.getenv("DB_NAME");
-            String host = System.getenv("DB_HOST");
-            String port = System.getenv("DB_PORT");
-
-            // Fallback to db.properties
-            if (user == null || password == null || database == null) {
-                var props = new Properties();
-                try (var in = Files.newInputStream(Path.of("server/src/main/resources/db.properties"))) {
-                    props.load(in);
-                }
-                user = props.getProperty("db.user", "root");
-                password = props.getProperty("db.password", "MyChessRoot2025!");
-                database = props.getProperty("db.name", "chess");
-                host = props.getProperty("db.host", "localhost");
-                port = props.getProperty("db.port", "3306");
-            }
-
-            if (host == null) host = "localhost";
-            if (port == null) port = "3306";
-
-            String connectionUrl = String.format("jdbc:mysql://%s:%s/%s", host, port, database);
-            return DriverManager.getConnection(connectionUrl, user, password);
-
-        } catch (IOException | SQLException e) {
-            throw new DataAccessException("Unable to connect to database", e);
+            //do not wrap the following line with a try-with-resources
+            var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+            conn.setCatalog(databaseName);
+            return conn;
+        } catch (SQLException ex) {
+            throw new DataAccessException("failed to get connection", ex);
         }
     }
 
+    private static void loadPropertiesFromResources() {
+        Properties props = new Properties();
+
+        try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
+            if (propStream != null) {
+                props.load(propStream);
+            }
+        } catch (Exception e) {
+            System.out.println("No db.properties file found — attempting to use environment variables.");
+        }
+
+        // Prefer environment variables, fallback to props, then to hardcoded defaults
+        databaseName = System.getenv("DB_NAME");
+        if (databaseName == null) {
+            databaseName = props.getProperty("db.name", "chess");
+        }
+
+        dbUsername = System.getenv("DB_USER");
+        if (dbUsername == null) {
+            dbUsername = props.getProperty("db.user", "root");
+        }
+
+        dbPassword = System.getenv("DB_PASSWORD");
+        if (dbPassword == null) {
+            dbPassword = props.getProperty("db.password", "MyChessRoot2025!");
+        }
+
+        var host = System.getenv("DB_HOST");
+        if (host == null) {
+            host = props.getProperty("db.host", "localhost");
+        }
+
+        var portStr = System.getenv("DB_PORT");
+        if (portStr == null) {
+            portStr = props.getProperty("db.port", "3306");
+        }
+
+        try {
+            int port = Integer.parseInt(portStr);
+            connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid port number for database: " + portStr);
+        }
+    }
+
+
+
+
+
+
+    private static void loadProperties(Properties props) {
+        databaseName = props.getProperty("db.name");
+        dbUsername = props.getProperty("db.user");
+        dbPassword = props.getProperty("db.password");
+
+        var host = props.getProperty("db.host");
+        var port = Integer.parseInt(props.getProperty("db.port"));
+        connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+    }
 }
