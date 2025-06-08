@@ -1,7 +1,9 @@
 package client;
+import server.Server;
+import model.AuthData;
+
 
 import org.junit.jupiter.api.*;
-import server.Server;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,11 +35,6 @@ public class ServerFacadeTests {
         AuthData auth = facade.register("madelyn", "password", "madelyn@byu.edu");
         assertNotNull(auth.authToken());
         assertEquals("madelyn", auth.username());
-    }
-
-    @BeforeEach
-    void clearDB() throws Exception {
-        facade.clear();
     }
 
     @Test
