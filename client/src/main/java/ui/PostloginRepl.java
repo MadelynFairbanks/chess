@@ -2,7 +2,7 @@ package ui;
 
 import client.ServerFacade;
 import model.AuthData;
-import result.GameData;
+import model.GameData;
 import result.ListGamesResult;
 
 import java.util.Scanner;
@@ -26,16 +26,16 @@ public class PostloginRepl {
 
             try {
                 switch (command) {
-                    case "help":
-                        printHelp();
-                        break;
-                    case "create":
+                    case "help" -> printHelp();
+
+                    case "create" -> {
                         System.out.print("Game name: ");
                         String gameName = scanner.nextLine();
-                        var result = facade.createGame(auth.authToken(), gameName);
+                        facade.createGame(auth.authToken(), gameName);
                         System.out.println("Game created: " + gameName);
-                        break;
-                    case "list":
+                    }
+
+                    case "list" -> {
                         ListGamesResult listResult = facade.listGames(auth.authToken());
                         if (listResult.games().isEmpty()) {
                             System.out.println("No games available.");
@@ -49,18 +49,44 @@ public class PostloginRepl {
                                         game.blackUsername() != null ? game.blackUsername() : "(empty)");
                             }
                         }
-                        break;
-                    case "logout":
+                    }
+
+                    case "join" -> {
+                        System.out.print("Game ID: ");
+                        int gameID = Integer.parseInt(scanner.nextLine().trim());
+
+                        System.out.print("Color (white/black/empty): ");
+                        String colorInput = scanner.nextLine().trim().toLowerCase();
+
+                        String playerColor;
+                        if (colorInput.equals("white")) {
+                            playerColor = "WHITE";
+                        } else if (colorInput.equals("black")) {
+                            playerColor = "BLACK";
+                        } else if (colorInput.equals("empty")) {
+                            playerColor = null;
+                        } else {
+                            System.out.println("Invalid color. Choose 'white', 'black', or 'empty'.");
+                            continue;
+                        }
+
+                        facade.joinGame(auth.authToken(), gameID, playerColor);
+                        System.out.println("Joined game " + gameID + " as " +
+                                (playerColor != null ? playerColor : "observer"));
+                    }
+
+                    case "logout" -> {
                         facade.logout(auth.authToken());
                         System.out.println("Logged out.");
                         return;
-                    case "quit":
+                    }
+
+                    case "quit" -> {
                         System.out.println("Goodbye!");
                         System.exit(0);
-                        break;
-                    default:
-                        System.out.println("Unknown command. Type 'help' for options.");
-                        break;
+                    }
+
+                    default -> System.out.println("Unknown command. Type 'help' for options.");
                 }
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
@@ -73,6 +99,7 @@ public class PostloginRepl {
         System.out.println("- help: Show this help message.");
         System.out.println("- create: Create a new game.");
         System.out.println("- list: List all available games.");
+        System.out.println("- join: Join a game by ID and color.");
         System.out.println("- logout: Log out of the current session.");
         System.out.println("- quit: Exit the program.");
     }
