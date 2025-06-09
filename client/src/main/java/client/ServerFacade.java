@@ -43,9 +43,10 @@ public class ServerFacade {
     }
 
     public void joinGame(String authToken, int gameID, String playerColor) throws Exception {
-        var request = new JoinGameRequest(authToken, gameID);
+        var request = new JoinGameRequest(playerColor, gameID); // ✅ match record order
         makeRequest("PUT", "/game", request, Void.class, authToken);
     }
+
 
     private <T> T makeRequest(String method, String path, Object body, Class<T> responseClass, String authToken) throws Exception {
         URL url = new URL(serverUrl + path);
