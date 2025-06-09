@@ -20,21 +20,39 @@ public class GameService {
     }
 
     public int createGame(String authToken, String gameName) throws DataAccessException {
+        System.out.println("✅ Entered GameService.createGame()");
+        System.out.println("authToken: " + authToken + ", gameName: " + gameName);
+
         if (authToken == null || gameName == null || gameName.isEmpty()) {
+            System.out.println("❌ Bad request: null/empty input");
             throw new DataAccessException("Error: bad request");
         }
 
         AuthData auth = dataAccess.getAuth(authToken);
         if (auth == null) {
+            System.out.println("❌ Invalid auth token: " + authToken);
             throw new DataAccessException("Error: unauthorized");
         }
 
         int gameID = idCounter.getAndIncrement();
-        GameData game = new GameData(gameID, null, null, gameName, new chess.ChessGame());
+        System.out.println("✅ Generated game ID: " + gameID);
 
-        dataAccess.createGame(game);
+        GameData game = new GameData(gameID, null, null, gameName, new chess.ChessGame());
+        System.out.println("✅ GameData object created");
+
+        try {
+            dataAccess.createGame(game);
+            System.out.println("✅ Game stored in database");
+        } catch (Exception e) {
+            System.out.println("❌ Failed to store game in database");
+            e.printStackTrace(); // <== this will finally show us the root cause
+            throw new DataAccessException("Error: failed to store game", e);
+        }
+        System.out.println("✅ Game successfully added to database");
+
         return gameID;
     }
+
 
     public List<GameData> listGames(String authToken) throws DataAccessException {
         if (authToken == null) {
@@ -50,27 +68,31 @@ public class GameService {
     }
 
     public CreateGameResult createGame(String authToken, CreateGameRequest request) throws DataAccessException {
-        // 1. Check if the auth token is valid
+        System.out.println("✅ Entered createGame (auth + request)");
+        System.out.println("authToken = " + authToken);
+        System.out.println("request = " + request);
+
         AuthData auth = dataAccess.getAuth(authToken);
         if (auth == null) {
+            System.out.println("❌ Invalid auth token");
             throw new DataAccessException("Error: unauthorized");
         }
 
-        // 2. Validate the game name
         if (request == null || request.gameName() == null || request.gameName().isBlank()) {
+            System.out.println("❌ Invalid game name");
             throw new DataAccessException("Error: bad request");
         }
 
-        // 3. Create the GameData
-        int gameID = dataAccess.generateGameID();
-        GameData newGame = new GameData(gameID, null, null, request.gameName(), new ChessGame());
+        GameData newGame = new GameData(-1, null, null, request.gameName(), new ChessGame());
+        int gameID = dataAccess.createGame(newGame);  // Create + return generated ID
 
-        // 4. Store the game
-        dataAccess.createGame(newGame);
 
-        // 5. Return the result
+
+        System.out.println("✅ About to return CreateGameResult: gameID = " + gameID);
         return new CreateGameResult(gameID);
     }
+
+
 
     public void joinGame(String authToken, JoinGameRequest request) throws DataAccessException {
         // Validate token

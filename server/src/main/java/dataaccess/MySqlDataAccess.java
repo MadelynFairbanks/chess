@@ -43,8 +43,8 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void createGame(GameData game) throws DataAccessException {
-        gameDAO.insertGame(game);
+    public int createGame(GameData game) throws DataAccessException {
+        return gameDAO.insertGame(game);
     }
 
     @Override

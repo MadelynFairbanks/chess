@@ -22,12 +22,14 @@ public class CreateGameHandler implements Route {
     @Override
     public Object handle(Request req, Response res) {
         try {
+            System.out.println("💥 [Server] Entered CreateGameHandler.handle()");
+
             String authToken = req.headers("authorization");
             CreateGameRequest request = gson.fromJson(req.body(), CreateGameRequest.class);
-            int gameID = service.createGame(authToken, request.gameName());
+            CreateGameResult result = service.createGame(authToken, request);
 
             res.status(200);
-            return gson.toJson(new CreateGameResult(gameID));
+            return gson.toJson(result);
         } catch (DataAccessException e) {
             if (e.getMessage().contains("bad request")) {
                 res.status(400);
@@ -38,6 +40,7 @@ public class CreateGameHandler implements Route {
             }
             return gson.toJson(Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }

@@ -10,21 +10,30 @@ import java.util.List;
 
 public class MySqlGameDAO {
 
-    public void insertGame(GameData game) throws DataAccessException {
-        String sql = "INSERT INTO games (gameID, gameName, whiteUsername, blackUsername, game) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public int insertGame(GameData game) throws DataAccessException {
+        String sql = "INSERT INTO games (whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?)";
 
-            stmt.setInt(1, game.gameID());
-            stmt.setString(2, game.gameName());
-            stmt.setString(3, game.whiteUsername());
-            stmt.setString(4, game.blackUsername());
-            stmt.setString(5, new Gson().toJson(game.game()));
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            stmt.setString(1, game.whiteUsername());
+            stmt.setString(2, game.blackUsername());
+            stmt.setString(3, game.gameName());
+            stmt.setString(4, new Gson().toJson(game.game()));
+
             stmt.executeUpdate();
+
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1); // return generated gameID
+            } else {
+                throw new DataAccessException("Unable to retrieve generated game ID");
+            }
         } catch (SQLException e) {
             throw new DataAccessException("Unable to insert game", e);
         }
     }
+
 
     public GameData findGame(int gameID) throws DataAccessException {
         String sql = "SELECT * FROM games WHERE gameID = ?";
