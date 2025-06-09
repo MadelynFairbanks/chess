@@ -17,6 +17,24 @@ public class ChessPosition {
         this.column = column;
     }
 
+    public static ChessPosition fromAlgebraic(String square) {
+        if (square == null || square.length() != 2) {
+            throw new IllegalArgumentException("Invalid algebraic notation: " + square);
+        }
+
+        char file = square.charAt(0); // 'a' through 'h'
+        char rank = square.charAt(1); // '1' through '8'
+
+        int column = file - 'a' + 1; // a=1, b=2, ..., h=8
+        int row = rank - '0';        // '1' = row 1 (bottom), '8' = row 8 (top)
+
+        if (column < 1 || column > 8 || row < 1 || row > 8) {
+            throw new IllegalArgumentException("Invalid board position: " + square);
+        }
+
+        return new ChessPosition(row, column);
+    }
+
     /**
      * @return which row this position is in
      * 1 codes for the bottom row

@@ -3,7 +3,9 @@ package client;
 import java.io.*;
 import java.net.*;
 import java.util.List;
+import request.MoveRequest;
 
+import chess.ChessMove;
 import com.google.gson.Gson;
 import request.*;
 import result.*;
@@ -83,4 +85,11 @@ public class ServerFacade {
             throw new RuntimeException("HTTP " + responseCode);
         }
     }
+
+    public void movePiece(String authToken, int gameID, ChessMove move) throws Exception {
+        var request = new MoveRequest(authToken, gameID, move);
+        makeRequest("POST", "/game/move", request, Void.class, authToken);
+
+    }
+
 }
