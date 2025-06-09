@@ -5,6 +5,7 @@ import model.AuthData;
 import model.GameData;
 import result.ListGamesResult;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class PostloginRepl {
@@ -36,12 +37,13 @@ public class PostloginRepl {
                     }
 
                     case "list" -> {
-                        ListGamesResult listResult = facade.listGames(auth.authToken());
-                        if (listResult.games().isEmpty()) {
+                        List<GameData> games = facade.listGames(auth.authToken());
+
+                        if (games.isEmpty()) {
                             System.out.println("No games available.");
                         } else {
                             System.out.println("Available Games:");
-                            for (GameData game : listResult.games()) {
+                            for (GameData game : games) {
                                 System.out.printf("- ID: %d | Name: %s | White: %s | Black: %s%n",
                                         game.gameID(),
                                         game.gameName(),

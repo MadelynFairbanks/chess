@@ -85,7 +85,7 @@ public class ServerFacadeTests {
     @Test
     void createGameSuccess() throws Exception {
         AuthData auth = facade.register("creator", "pass", "creator@byu.edu");
-        int gameID = facade.createGame(auth.authToken(), "MyGame").gameID();
+        int gameID = facade.createGame(auth.authToken(), "MyGame");
         assertTrue(gameID > 0);
     }
 
@@ -99,10 +99,9 @@ public class ServerFacadeTests {
         AuthData auth = facade.register("lister", "pass", "list@byu.edu");
         facade.createGame(auth.authToken(), "GameOne");
 
-        ListGamesResult result = facade.listGames(auth.authToken());
-        List<GameData> games = result.games();
-
+        List<GameData> games = facade.listGames(auth.authToken());
         assertFalse(games.isEmpty());
+
     }
 
     @Test
@@ -113,10 +112,10 @@ public class ServerFacadeTests {
     @Test
     void joinGameSuccess() throws Exception {
         AuthData auth = facade.register("joiner", "pass", "join@byu.edu");
-        int gameID = facade.createGame(auth.authToken(), "JoinableGame").gameID();
+        int gameID = facade.createGame(auth.authToken(), "JoinableGame");
         facade.joinGame(auth.authToken(), gameID, "WHITE");
 
-        List<GameData> games = facade.listGames(auth.authToken()).games();
+        List<GameData> games = facade.listGames(auth.authToken());
         GameData game = games.stream()
                 .filter(g -> g.gameID() == gameID)
                 .findFirst()
@@ -129,7 +128,7 @@ public class ServerFacadeTests {
     void joinGameFail_TakenColor() throws Exception {
         AuthData auth1 = facade.register("white1", "pass", "w1@byu.edu");
         AuthData auth2 = facade.register("white2", "pass", "w2@byu.edu");
-        int gameID = facade.createGame(auth1.authToken(), "DoubleWhite").gameID();
+        int gameID = facade.createGame(auth1.authToken(), "DoubleWhite");
 
         facade.joinGame(auth1.authToken(), gameID, "WHITE");
         assertThrows(Exception.class, () -> facade.joinGame(auth2.authToken(), gameID, "WHITE"));

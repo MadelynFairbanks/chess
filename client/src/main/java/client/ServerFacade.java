@@ -2,6 +2,8 @@ package client;
 
 import java.io.*;
 import java.net.*;
+import java.util.List;
+
 import com.google.gson.Gson;
 import request.*;
 import result.*;
@@ -33,13 +35,16 @@ public class ServerFacade {
         makeRequest("DELETE", "/db", null, Void.class, null);
     }
 
-    public CreateGameResult createGame(String authToken, String gameName) throws Exception {
+    public int createGame(String authToken, String gameName) throws Exception {
         var request = new CreateGameRequest(gameName);
-        return makeRequest("POST", "/game", request, CreateGameResult.class, authToken);
+        CreateGameResult result = makeRequest("POST", "/game", request, CreateGameResult.class, authToken);
+        return result.gameID();  // ✅ just return the game ID directly
     }
 
-    public ListGamesResult listGames(String authToken) throws Exception {
-        return makeRequest("GET", "/game", null, ListGamesResult.class, authToken);
+
+    public List<GameData> listGames(String authToken) throws Exception {
+        ListGamesResult result = makeRequest("GET", "/game", null, ListGamesResult.class, authToken);
+        return result.games();  // ✅ unwrap the list of games
     }
 
     public void joinGame(String authToken, int gameID, String playerColor) throws Exception {
