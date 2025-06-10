@@ -125,8 +125,21 @@ public class PostloginRepl {
                     }
 
                     case "move" -> {
-                        System.out.print("Game ID: ");
-                        int gameID = Integer.parseInt(scanner.nextLine().trim());
+                        if (gameList == null || gameList.isEmpty()) {
+                            System.out.println("No games listed yet. Use 'list' first.");
+                            break;
+                        }
+
+                        System.out.print("Game number to make a move in: ");
+                        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
+
+                        if (gameNumber < 1 || gameNumber > gameList.size()) {
+                            System.out.println("Invalid game number.");
+                            break;
+                        }
+
+                        GameData game = gameList.get(gameNumber - 1);
+                        int gameID = game.gameID();
 
                         System.out.print("Start square (e.g., e2): ");
                         String from = scanner.nextLine().trim().toLowerCase();
@@ -145,13 +158,14 @@ public class PostloginRepl {
                             System.out.println("Move executed: " + from + " to " + to);
 
                             List<GameData> games = facade.listGames(auth.authToken());
-                            GameData game = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
-                            BoardPrinter.printBoard(game.game(), true);
+                            GameData updatedGame = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
+                            BoardPrinter.printBoard(updatedGame.game(), true);
 
                         } catch (Exception e) {
                             System.out.println("Invalid move: " + e.getMessage());
                         }
                     }
+
 
                     case "resign" -> {
                         System.out.println("Feature not implemented yet. Stay tuned!");

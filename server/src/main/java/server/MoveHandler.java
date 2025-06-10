@@ -22,7 +22,8 @@ public class MoveHandler implements Route {
         MoveRequest moveRequest = gson.fromJson(req.body(), MoveRequest.class);
 
         try {
-            gameService.makeMove(moveRequest.authToken(), moveRequest.gameID(), moveRequest.move());
+            String authToken = req.headers("Authorization");
+            gameService.makeMove(authToken, moveRequest.gameID(), moveRequest.move());
             res.status(200);
             return gson.toJson(new MoveResult("Move successful."));
         } catch (DataAccessException e) {
