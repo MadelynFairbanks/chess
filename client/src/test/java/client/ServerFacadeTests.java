@@ -37,14 +37,14 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void register_positive() throws Exception {
+    void registerPositive() throws Exception {
         AuthData auth = facade.register("madelyn", "password", "madelyn@byu.edu");
         assertNotNull(auth.authToken());
         assertEquals("madelyn", auth.username());
     }
 
     @Test
-    void registerFail_DuplicateUser() throws Exception {
+    void registerFailDuplicateUser() throws Exception {
         facade.register("player1", "password", "p1@email.com");
         assertThrows(Exception.class, () -> facade.register("player1", "password", "p1@email.com"));
     }
@@ -58,7 +58,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void loginFail_InvalidPassword() throws Exception {
+    void loginFailInvalidPassword() throws Exception {
         facade.register("testuser", "correctpass", "test@byu.edu");
         assertThrows(Exception.class, () -> facade.login("testuser", "wrongpass"));
     }
@@ -71,7 +71,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void logoutFail_InvalidToken() {
+    void logoutFailInvalidToken() {
         assertThrows(Exception.class, () -> facade.logout("invalid-token"));
     }
 
@@ -90,7 +90,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void createGameFail_BadAuth() {
+    void createGameFailBadAuth() {
         assertThrows(Exception.class, () -> facade.createGame("bad-token", "failGame"));
     }
 
@@ -105,7 +105,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void listGamesFail_BadAuth() {
+    void listGamesFailBadAuth() {
         assertThrows(Exception.class, () -> facade.listGames("bad-token"));
     }
 
@@ -125,7 +125,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void joinGameFail_TakenColor() throws Exception {
+    void joinGameFailTakenColor() throws Exception {
         AuthData auth1 = facade.register("white1", "pass", "w1@byu.edu");
         AuthData auth2 = facade.register("white2", "pass", "w2@byu.edu");
         int gameID = facade.createGame(auth1.authToken(), "DoubleWhite");
