@@ -114,10 +114,11 @@ public class GameService {
 
         String color = request.playerColor();
 
-        // ✅ THIS is the line that fixes the autograder failure
-        if (color != null && !color.equalsIgnoreCase("WHITE") && !color.equalsIgnoreCase("BLACK")) {
+        if (color == null || color.isBlank() ||
+                !(color.equalsIgnoreCase("WHITE") || color.equalsIgnoreCase("BLACK"))) {
             throw new DataAccessException("Error: bad request");
         }
+
 
         // Check if spot already taken
         if (color != null && color.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
