@@ -22,8 +22,8 @@ public class PostloginRepl {
 
     public void run() {
         System.out.println("Entered post-login UI for user: " + auth.username());
-
         Scanner scanner = new Scanner(System.in);
+
         while (true) {
             System.out.print("[Postlogin] >>> ");
             String command = scanner.nextLine().trim().toLowerCase();
@@ -31,163 +31,167 @@ public class PostloginRepl {
             try {
                 switch (command) {
                     case "help" -> printHelp();
-
-                    case "create" -> {
-                        System.out.print("Game name: ");
-                        String gameName = scanner.nextLine();
-                        facade.createGame(auth.authToken(), gameName);
-                        System.out.println("Game created: " + gameName);
-                    }
-
-                    case "list" -> {
-                        gameList = facade.listGames(auth.authToken());
-                        if (gameList.isEmpty()) {
-                            System.out.println("No games available.");
-                        } else {
-                            System.out.println("Available Games:");
-                            for (int i = 0; i < gameList.size(); i++) {
-                                GameData game = gameList.get(i);
-                                System.out.printf("%d. Name: %s | ID: %d | White: %s | Black: %s%n",
-                                        i + 1,
-                                        game.gameName(),
-                                        game.gameID(),
-                                        game.whiteUsername() != null ? game.whiteUsername() : "(empty)",
-                                        game.blackUsername() != null ? game.blackUsername() : "(empty)");
-                            }
-                        }
-                    }
-
-
-                    case "observe" -> {
-                        if (gameList == null || gameList.isEmpty()) {
-                            System.out.println("No games listed yet. Use 'list' first.");
-                            break;
-                        }
-
-                        System.out.print("Game number to observe: ");
-                        try {
-                            int num = Integer.parseInt(scanner.nextLine().trim());
-                            if (num < 1 || num > gameList.size()) {
-                                System.out.println("Invalid game number.");
-                                break;
-                            }
-
-                            GameData game = gameList.get(num - 1);
-                            facade.joinGame(auth.authToken(), game.gameID(), null);  // null = observe
-                            System.out.println("Now observing game \"" + game.gameName() + "\".");
-                            BoardPrinter.printBoard(game.game(), true); // always white’s view
-                        } catch (Exception e) {
-                            System.out.println("Error observing game: " + e.getMessage());
-                        }
-                    }
-
-
-                    case "play" -> {
-                        if (gameList == null || gameList.isEmpty()) {
-                            System.out.println("No games listed yet. Use 'list' first.");
-                            break;
-                        }
-
-                        System.out.print("Game number to play: ");
-                        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
-
-                        if (gameNumber < 1 || gameNumber > gameList.size()) {
-                            System.out.println("Invalid game number.");
-                            break;
-                        }
-
-                        GameData game = gameList.get(gameNumber - 1);
-                        int gameID = game.gameID();
-
-                        System.out.print("Color (white/black): ");
-                        String colorInput = scanner.nextLine().trim().toLowerCase();
-
-                        String playerColor;
-                        if (colorInput.equals("white")) {
-                            playerColor = "WHITE";
-                        } else if (colorInput.equals("black")) {
-                            playerColor = "BLACK";
-                        } else {
-                            System.out.println("Invalid color. Choose 'white' or 'black'.");
-                            break;
-                        }
-
-                        boolean alreadyJoined = (playerColor.equals("WHITE") && auth.username().equals(game.whiteUsername())) ||
-                                (playerColor.equals("BLACK") && auth.username().equals(game.blackUsername()));
-
-                        if (!alreadyJoined) {
-                            facade.joinGame(auth.authToken(), gameID, playerColor);
-                            System.out.println("Joined game " + gameID + " as " + playerColor);
-                        }
-
-                        boolean whitePerspective = playerColor.equals("WHITE");
-                        BoardPrinter.printBoard(game.game(), whitePerspective);
-                    }
-
-                    case "move" -> {
-                        if (gameList == null || gameList.isEmpty()) {
-                            System.out.println("No games listed yet. Use 'list' first.");
-                            break;
-                        }
-
-                        System.out.print("Game number to make a move in: ");
-                        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
-
-                        if (gameNumber < 1 || gameNumber > gameList.size()) {
-                            System.out.println("Invalid game number.");
-                            break;
-                        }
-
-                        GameData game = gameList.get(gameNumber - 1);
-                        int gameID = game.gameID();
-
-                        System.out.print("Start square (e.g., e2): ");
-                        String from = scanner.nextLine().trim().toLowerCase();
-
-                        System.out.print("End square (e.g., e4): ");
-                        String to = scanner.nextLine().trim().toLowerCase();
-
-                        try {
-                            ChessMove move = new ChessMove(
-                                    ChessPosition.fromAlgebraic(from),
-                                    ChessPosition.fromAlgebraic(to),
-                                    null
-                            );
-
-                            facade.movePiece(auth.authToken(), gameID, move);
-                            System.out.println("Move executed: " + from + " to " + to);
-
-                            List<GameData> games = facade.listGames(auth.authToken());
-                            GameData updatedGame = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
-                            BoardPrinter.printBoard(updatedGame.game(), true);
-
-                        } catch (Exception e) {
-                            System.out.println("Invalid move: " + e.getMessage());
-                        }
-                    }
-
-
-                    case "resign" -> {
-                        System.out.println("Feature not implemented yet. Stay tuned!");
-                    }
-
+                    case "create" -> handleCreate(scanner);
+                    case "list" -> handleList();
+                    case "observe" -> handleObserve(scanner);
+                    case "play" -> handlePlay(scanner);
+                    case "move" -> handleMove(scanner);
+                    case "resign" -> handleResign();
                     case "logout" -> {
-                        facade.logout(auth.authToken());
-                        System.out.println("Logged out.");
+                        handleLogout();
                         return;
                     }
-
                     case "quit" -> {
                         System.out.println("Goodbye!");
                         System.exit(0);
                     }
-
                     default -> System.out.println("Unknown command. Type 'help' for options.");
                 }
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
+    }
+
+    private void handleCreate(Scanner scanner) throws Exception {
+        System.out.print("Game name: ");
+        String gameName = scanner.nextLine();
+        facade.createGame(auth.authToken(), gameName);
+        System.out.println("Game created: " + gameName);
+    }
+
+    private void handleList() throws Exception {
+        gameList = facade.listGames(auth.authToken());
+        if (gameList.isEmpty()) {
+            System.out.println("No games available.");
+        } else {
+            System.out.println("Available Games:");
+            for (int i = 0; i < gameList.size(); i++) {
+                GameData game = gameList.get(i);
+                System.out.printf("%d. Name: %s | ID: %d | White: %s | Black: %s%n",
+                        i + 1,
+                        game.gameName(),
+                        game.gameID(),
+                        game.whiteUsername() != null ? game.whiteUsername() : "(empty)",
+                        game.blackUsername() != null ? game.blackUsername() : "(empty)");
+            }
+        }
+    }
+
+    private void handleObserve(Scanner scanner) {
+        if (gameList == null || gameList.isEmpty()) {
+            System.out.println("No games listed yet. Use 'list' first.");
+            return;
+        }
+
+        System.out.print("Game number to observe: ");
+        try {
+            int num = Integer.parseInt(scanner.nextLine().trim());
+            if (num < 1 || num > gameList.size()) {
+                System.out.println("Invalid game number.");
+                return;
+            }
+
+            GameData game = gameList.get(num - 1);
+            facade.joinGame(auth.authToken(), game.gameID(), null);
+            System.out.println("Now observing game \"" + game.gameName() + "\".");
+            BoardPrinter.printBoard(game.game(), true);
+        } catch (Exception e) {
+            System.out.println("Error observing game: " + e.getMessage());
+        }
+    }
+
+    private void handlePlay(Scanner scanner) throws Exception {
+        if (gameList == null || gameList.isEmpty()) {
+            System.out.println("No games listed yet. Use 'list' first.");
+            return;
+        }
+
+        System.out.print("Game number to play: ");
+        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
+
+        if (gameNumber < 1 || gameNumber > gameList.size()) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+
+        GameData game = gameList.get(gameNumber - 1);
+        int gameID = game.gameID();
+
+        System.out.print("Color (white/black): ");
+        String colorInput = scanner.nextLine().trim().toLowerCase();
+
+        String playerColor;
+        if (colorInput.equals("white")) {
+            playerColor = "WHITE";
+        } else if (colorInput.equals("black")) {
+            playerColor = "BLACK";
+        } else {
+            System.out.println("Invalid color. Choose 'white' or 'black'.");
+            return;
+        }
+
+        boolean alreadyJoined = (playerColor.equals("WHITE") && auth.username().equals(game.whiteUsername())) ||
+                (playerColor.equals("BLACK") && auth.username().equals(game.blackUsername()));
+
+        if (!alreadyJoined) {
+            facade.joinGame(auth.authToken(), gameID, playerColor);
+            System.out.println("Joined game " + gameID + " as " + playerColor);
+        }
+
+        boolean whitePerspective = playerColor.equals("WHITE");
+        BoardPrinter.printBoard(game.game(), whitePerspective);
+    }
+
+    private void handleMove(Scanner scanner) throws Exception {
+        if (gameList == null || gameList.isEmpty()) {
+            System.out.println("No games listed yet. Use 'list' first.");
+            return;
+        }
+
+        System.out.print("Game number to make a move in: ");
+        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
+
+        if (gameNumber < 1 || gameNumber > gameList.size()) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+
+        GameData game = gameList.get(gameNumber - 1);
+        int gameID = game.gameID();
+
+        System.out.print("Start square (e.g., e2): ");
+        String from = scanner.nextLine().trim().toLowerCase();
+
+        System.out.print("End square (e.g., e4): ");
+        String to = scanner.nextLine().trim().toLowerCase();
+
+        try {
+            ChessMove move = new ChessMove(
+                    ChessPosition.fromAlgebraic(from),
+                    ChessPosition.fromAlgebraic(to),
+                    null
+            );
+
+            facade.movePiece(auth.authToken(), gameID, move);
+            System.out.println("Move executed: " + from + " to " + to);
+
+            List<GameData> games = facade.listGames(auth.authToken());
+            GameData updatedGame = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
+            BoardPrinter.printBoard(updatedGame.game(), true);
+
+        } catch (Exception e) {
+            System.out.println("Invalid move: " + e.getMessage());
+        }
+    }
+
+    private void handleResign() {
+        System.out.println("Feature not implemented yet. Stay tuned!");
+    }
+
+    private void handleLogout() throws Exception {
+        facade.logout(auth.authToken());
+        System.out.println("Logged out.");
     }
 
     private void printHelp() {
