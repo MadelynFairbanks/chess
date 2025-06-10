@@ -26,4 +26,5 @@ public interface DataAccess {
 
     List<GameData> listGames() throws DataAccessException;
 
+    int generateGameID() throws DataAccessException;
 }
