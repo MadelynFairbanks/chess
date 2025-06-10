@@ -11,7 +11,7 @@ import java.util.List;
 public class MySqlGameDAO {
 
     public int insertGame(GameData game) throws DataAccessException {
-        String sql = "INSERT INTO games (whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO games (whiteUsername, blackUsername, gameName, game, gameOver) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -20,6 +20,7 @@ public class MySqlGameDAO {
             stmt.setString(2, game.blackUsername());
             stmt.setString(3, game.gameName());
             stmt.setString(4, new Gson().toJson(game.game()));
+            stmt.setBoolean(5, game.gameOver());
 
             stmt.executeUpdate();
 
@@ -34,7 +35,6 @@ public class MySqlGameDAO {
         }
     }
 
-
     public GameData findGame(int gameID) throws DataAccessException {
         String sql = "SELECT * FROM games WHERE gameID = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -45,13 +45,15 @@ public class MySqlGameDAO {
             if (rs.next()) {
                 String jsonGame = rs.getString("game");
                 ChessGame chessGame = new Gson().fromJson(jsonGame, ChessGame.class);
+                boolean gameOver = rs.getBoolean("gameOver");
 
                 return new GameData(
                         rs.getInt("gameID"),
                         rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("gameName"),
-                        chessGame
+                        chessGame,
+                        gameOver
                 );
             }
             return null;
@@ -60,9 +62,8 @@ public class MySqlGameDAO {
         }
     }
 
-
     public void updateGame(GameData game) throws DataAccessException {
-        String sql = "UPDATE games SET gameName=?, whiteUsername=?, blackUsername=?, game=? WHERE gameID=?";
+        String sql = "UPDATE games SET gameName=?, whiteUsername=?, blackUsername=?, game=?, gameOver=? WHERE gameID=?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -70,7 +71,9 @@ public class MySqlGameDAO {
             stmt.setString(2, game.whiteUsername());
             stmt.setString(3, game.blackUsername());
             stmt.setString(4, new Gson().toJson(game.game()));
-            stmt.setInt(5, game.gameID());
+            stmt.setBoolean(5, game.gameOver());
+            stmt.setInt(6, game.gameID());
+
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Unable to update game", e);
@@ -87,12 +90,12 @@ public class MySqlGameDAO {
             while (rs.next()) {
                 games.add(new GameData(
                         rs.getInt("gameID"),
-                        rs.getString("whiteUsername"),       // ✅ Correct order
+                        rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("gameName"),
-                        new Gson().fromJson(rs.getString("game"), ChessGame.class)
+                        new Gson().fromJson(rs.getString("game"), ChessGame.class),
+                        rs.getBoolean("gameOver")
                 ));
-
             }
         } catch (SQLException e) {
             throw new DataAccessException("Unable to list games", e);

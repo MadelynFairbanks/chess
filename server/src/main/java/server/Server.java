@@ -10,6 +10,10 @@ import service.GameService;
 import dataaccess.MySqlDataAccess;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseManager;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import server.websocket.GameWebSocketHandler;
+
 
 
 public class Server {
@@ -60,6 +64,12 @@ public class Server {
             res.body("{\"message\":\"Database error\"}");
         });
 
+        Spark.webSocket("/ws", new WebSocketHandler() {
+            @Override
+            public void configure(WebSocketServletFactory factory) {
+                factory.register(GameWebSocketHandler.class);
+            }
+        });
 
         //This line initializes the server and can be removed once you have a functioning endpoint
         Spark.init();
