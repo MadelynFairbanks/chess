@@ -4,10 +4,8 @@ import chess.ChessGame;
 import client.ServerFacade;
 import model.AuthData;
 import model.GameData;
-import result.ListGamesResult;
 import chess.ChessMove;
 import chess.ChessPosition;
-
 
 import java.util.List;
 import java.util.Scanner;
@@ -15,7 +13,6 @@ import java.util.Scanner;
 public class PostloginRepl {
     private final AuthData auth;
     private final ServerFacade facade;
-
     private List<GameData> gameList = null;
 
     public PostloginRepl(AuthData auth, ServerFacade facade) {
@@ -44,47 +41,22 @@ public class PostloginRepl {
 
                     case "list" -> {
                         gameList = facade.listGames(auth.authToken());
-
-
                         if (gameList.isEmpty()) {
                             System.out.println("No games available.");
                         } else {
                             System.out.println("Available Games:");
                             for (int i = 0; i < gameList.size(); i++) {
                                 GameData game = gameList.get(i);
-                                System.out.printf("%d. Name: %s | White: %s | Black: %s%n",
+                                System.out.printf("%d. Name: %s | ID: %d | White: %s | Black: %s%n",
                                         i + 1,
                                         game.gameName(),
+                                        game.gameID(),
                                         game.whiteUsername() != null ? game.whiteUsername() : "(empty)",
                                         game.blackUsername() != null ? game.blackUsername() : "(empty)");
                             }
-
                         }
                     }
 
-                    case "join" -> {
-                        System.out.print("Game ID: ");
-                        int gameID = Integer.parseInt(scanner.nextLine().trim());
-
-                        System.out.print("Color (white/black/empty): ");
-                        String colorInput = scanner.nextLine().trim().toLowerCase();
-
-                        String playerColor;
-                        if (colorInput.equals("white")) {
-                            playerColor = "WHITE";
-                        } else if (colorInput.equals("black")) {
-                            playerColor = "BLACK";
-                        } else if (colorInput.equals("empty")) {
-                            playerColor = null;
-                        } else {
-                            System.out.println("Invalid color. Choose 'white', 'black', or 'empty'.");
-                            continue;
-                        }
-
-                        facade.joinGame(auth.authToken(), gameID, playerColor);
-                        System.out.println("Joined game " + gameID + " as " +
-                                (playerColor != null ? playerColor : "observer"));
-                    }
 
                     case "observe" -> {
                         if (gameList == null || gameList.isEmpty()) {
@@ -93,18 +65,17 @@ public class PostloginRepl {
                         }
 
                         System.out.print("Game number to observe: ");
-                        var numStr = scanner.nextLine();
                         try {
-                            int gameNumber = Integer.parseInt(numStr);
-                            if (gameNumber < 1 || gameNumber > gameList.size()) {
+                            int num = Integer.parseInt(scanner.nextLine().trim());
+                            if (num < 1 || num > gameList.size()) {
                                 System.out.println("Invalid game number.");
                                 break;
                             }
 
-                            var game = gameList.get(gameNumber - 1);
-                            facade.joinGame(auth.authToken(), game.gameID(), null);// null = observe
+                            GameData game = gameList.get(num - 1);
+                            facade.joinGame(auth.authToken(), game.gameID(), null);  // null = observe
                             System.out.println("Now observing game \"" + game.gameName() + "\".");
-                            BoardPrinter.printBoard(game.game(), true); // always white’s view for observe
+                            BoardPrinter.printBoard(game.game(), true); // always white’s view
                         } catch (Exception e) {
                             System.out.println("Error observing game: " + e.getMessage());
                         }
@@ -112,8 +83,21 @@ public class PostloginRepl {
 
 
                     case "play" -> {
-                        System.out.print("Game ID to play: ");
-                        int gameID = Integer.parseInt(scanner.nextLine().trim());
+                        if (gameList == null || gameList.isEmpty()) {
+                            System.out.println("No games listed yet. Use 'list' first.");
+                            break;
+                        }
+
+                        System.out.print("Game number to play: ");
+                        int gameNumber = Integer.parseInt(scanner.nextLine().trim());
+
+                        if (gameNumber < 1 || gameNumber > gameList.size()) {
+                            System.out.println("Invalid game number.");
+                            break;
+                        }
+
+                        GameData game = gameList.get(gameNumber - 1);
+                        int gameID = game.gameID();
 
                         System.out.print("Color (white/black): ");
                         String colorInput = scanner.nextLine().trim().toLowerCase();
@@ -125,18 +109,13 @@ public class PostloginRepl {
                             playerColor = "BLACK";
                         } else {
                             System.out.println("Invalid color. Choose 'white' or 'black'.");
-                            continue;
+                            break;
                         }
-
-                        // Check if user is already in the game
-                        List<GameData> games = facade.listGames(auth.authToken());
-                        GameData game = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
 
                         boolean alreadyJoined = (playerColor.equals("WHITE") && auth.username().equals(game.whiteUsername())) ||
                                 (playerColor.equals("BLACK") && auth.username().equals(game.blackUsername()));
 
                         if (!alreadyJoined) {
-                            // Only join if not already joined
                             facade.joinGame(auth.authToken(), gameID, playerColor);
                             System.out.println("Joined game " + gameID + " as " + playerColor);
                         }
@@ -144,7 +123,6 @@ public class PostloginRepl {
                         boolean whitePerspective = playerColor.equals("WHITE");
                         BoardPrinter.printBoard(game.game(), whitePerspective);
                     }
-
 
                     case "move" -> {
                         System.out.print("Game ID: ");
@@ -160,13 +138,12 @@ public class PostloginRepl {
                             ChessMove move = new ChessMove(
                                     ChessPosition.fromAlgebraic(from),
                                     ChessPosition.fromAlgebraic(to),
-                                    null // You can modify this for promotion
+                                    null
                             );
 
                             facade.movePiece(auth.authToken(), gameID, move);
                             System.out.println("Move executed: " + from + " to " + to);
 
-                            // Optional: print updated board
                             List<GameData> games = facade.listGames(auth.authToken());
                             GameData game = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
                             BoardPrinter.printBoard(game.game(), true);
@@ -175,7 +152,6 @@ public class PostloginRepl {
                             System.out.println("Invalid move: " + e.getMessage());
                         }
                     }
-
 
                     case "resign" -> {
                         System.out.println("Feature not implemented yet. Stay tuned!");
@@ -206,9 +182,9 @@ public class PostloginRepl {
         System.out.println("- create: Create a new game.");
         System.out.println("- list: List all available games.");
         System.out.println("- join: Join a game by ID and color.");
-        System.out.println("- observe: Observe a game using list number.");
-        System.out.println("- play: Join and view a game using list number.");
-        System.out.println("- move: Make a move in a game. (Not yet implemented)");
+        System.out.println("- observe: Observe a game in progress.");
+        System.out.println("- play: Join a game and view the board.");
+        System.out.println("- move: Make a move in a game.");
         System.out.println("- resign: Resign from a game. (Not yet implemented)");
         System.out.println("- logout: Log out of the current session.");
         System.out.println("- quit: Exit the program.");

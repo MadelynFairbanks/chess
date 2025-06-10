@@ -87,9 +87,9 @@ public class ServerFacade {
     }
 
     public void movePiece(String authToken, int gameID, ChessMove move) throws Exception {
-        var request = new MoveRequest(authToken, gameID, move);
+        var request = new MoveRequest(gameID, move);  // ✅ no auth token in the request object
         makeRequest("POST", "/game/move", request, Void.class, authToken);
-
     }
+
 
 }

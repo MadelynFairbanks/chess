@@ -103,8 +103,7 @@ public class GameService {
         }
 
         // Validate request
-        if (request == null || request.playerColor() == null ||
-                (!request.playerColor().equalsIgnoreCase("WHITE") && !request.playerColor().equalsIgnoreCase("BLACK"))) {
+        if (request == null) {
             throw new DataAccessException("Error: bad request");
         }
 
@@ -113,25 +112,37 @@ public class GameService {
             throw new DataAccessException("Error: bad request");
         }
 
+        String color = request.playerColor();
+
+        // If observing (null color), don't update game — just allow
+        if (color == null) {
+            return;
+        }
+
+        if (!color.equalsIgnoreCase("WHITE") && !color.equalsIgnoreCase("BLACK")) {
+            throw new DataAccessException("Error: bad request");
+        }
+
         // Check if spot already taken
-        if (request.playerColor().equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
+        if (color.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
             throw new DataAccessException("Error: already taken");
         }
-        if (request.playerColor().equalsIgnoreCase("BLACK") && game.blackUsername() != null) {
+        if (color.equalsIgnoreCase("BLACK") && game.blackUsername() != null) {
             throw new DataAccessException("Error: already taken");
         }
 
         // Update the game data
         GameData updatedGame = new GameData(
                 game.gameID(),
-                request.playerColor().equalsIgnoreCase("WHITE") ? auth.username() : game.whiteUsername(),
-                request.playerColor().equalsIgnoreCase("BLACK") ? auth.username() : game.blackUsername(),
+                color.equalsIgnoreCase("WHITE") ? auth.username() : game.whiteUsername(),
+                color.equalsIgnoreCase("BLACK") ? auth.username() : game.blackUsername(),
                 game.gameName(),
                 game.game()
         );
 
         dataAccess.updateGame(updatedGame);
     }
+
 
     public void makeMove(String authToken, int gameID, ChessMove move) throws DataAccessException {
         var auth = dataAccess.getAuth(authToken);
