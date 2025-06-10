@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessMove;
 import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
 import model.AuthData;
@@ -131,4 +132,25 @@ public class GameService {
 
         dataAccess.updateGame(updatedGame);
     }
+
+    public void makeMove(String authToken, int gameID, ChessMove move) throws DataAccessException {
+        var auth = dataAccess.getAuth(authToken);
+        if (auth == null) {
+            throw new DataAccessException("unauthorized");
+        }
+
+        var game = dataAccess.getGame(gameID);
+        if (game == null) {
+            throw new DataAccessException("game not found");
+        }
+
+        try {
+            game.game().makeMove(move);  // ✅ this works — you're calling it on the ChessGame inside GameData
+        } catch (Exception e) {
+            throw new DataAccessException("invalid move");
+        }
+
+        dataAccess.updateGame(game);  // Save game state after move
+    }
+
 }

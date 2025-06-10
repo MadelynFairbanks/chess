@@ -45,6 +45,7 @@ public class Server {
         CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
         ListGamesHandler listGamesHandler = new ListGamesHandler(gameService);
         JoinGameHandler joinGameHandler = new JoinGameHandler(gameService);
+        MoveHandler moveHandler = new MoveHandler(gameService);
 
         Spark.post("/user", registerHandler);
         Spark.post("/session", loginHandler);
@@ -52,6 +53,7 @@ public class Server {
         Spark.post("/game", createGameHandler);
         Spark.get("/game", listGamesHandler);
         Spark.put("/game", joinGameHandler);
+        Spark.post("/game/move", moveHandler);
 
         Spark.exception(DataAccessException.class, (ex, req, res) -> {
             res.status(500);

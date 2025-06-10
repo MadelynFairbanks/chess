@@ -16,6 +16,8 @@ public class PostloginRepl {
     private final AuthData auth;
     private final ServerFacade facade;
 
+    private List<GameData> gameList = null;
+
     public PostloginRepl(AuthData auth, ServerFacade facade) {
         this.auth = auth;
         this.facade = facade;
@@ -41,19 +43,22 @@ public class PostloginRepl {
                     }
 
                     case "list" -> {
-                        List<GameData> games = facade.listGames(auth.authToken());
+                        gameList = facade.listGames(auth.authToken());
 
-                        if (games.isEmpty()) {
+
+                        if (gameList.isEmpty()) {
                             System.out.println("No games available.");
                         } else {
                             System.out.println("Available Games:");
-                            for (GameData game : games) {
-                                System.out.printf("- ID: %d | Name: %s | White: %s | Black: %s%n",
-                                        game.gameID(),
+                            for (int i = 0; i < gameList.size(); i++) {
+                                GameData game = gameList.get(i);
+                                System.out.printf("%d. Name: %s | White: %s | Black: %s%n",
+                                        i + 1,
                                         game.gameName(),
                                         game.whiteUsername() != null ? game.whiteUsername() : "(empty)",
                                         game.blackUsername() != null ? game.blackUsername() : "(empty)");
                             }
+
                         }
                     }
 
@@ -82,17 +87,29 @@ public class PostloginRepl {
                     }
 
                     case "observe" -> {
-                        System.out.print("Game ID to observe: ");
-                        int gameID = Integer.parseInt(scanner.nextLine().trim());
+                        if (gameList == null || gameList.isEmpty()) {
+                            System.out.println("No games listed yet. Use 'list' first.");
+                            break;
+                        }
 
-                        List<GameData> games = facade.listGames(auth.authToken());
-                        GameData game = games.stream().filter(g -> g.gameID() == gameID).findFirst().orElseThrow();
+                        System.out.print("Game number to observe: ");
+                        var numStr = scanner.nextLine();
+                        try {
+                            int gameNumber = Integer.parseInt(numStr);
+                            if (gameNumber < 1 || gameNumber > gameList.size()) {
+                                System.out.println("Invalid game number.");
+                                break;
+                            }
 
-                        System.out.println("Observing game " + gameID + ":");
-                        BoardPrinter.printBoard(game.game(), true);  // true = white's perspective
-                        // true = white's perspective
-
+                            var game = gameList.get(gameNumber - 1);
+                            facade.joinGame(auth.authToken(), game.gameID(), null);// null = observe
+                            System.out.println("Now observing game \"" + game.gameName() + "\".");
+                            BoardPrinter.printBoard(game.game(), true); // always white’s view for observe
+                        } catch (Exception e) {
+                            System.out.println("Error observing game: " + e.getMessage());
+                        }
                     }
+
 
                     case "play" -> {
                         System.out.print("Game ID to play: ");
@@ -189,8 +206,8 @@ public class PostloginRepl {
         System.out.println("- create: Create a new game.");
         System.out.println("- list: List all available games.");
         System.out.println("- join: Join a game by ID and color.");
-        System.out.println("- observe: Observe a game in progress.");
-        System.out.println("- play: Join a game and view the board.");
+        System.out.println("- observe: Observe a game using list number.");
+        System.out.println("- play: Join and view a game using list number.");
         System.out.println("- move: Make a move in a game. (Not yet implemented)");
         System.out.println("- resign: Resign from a game. (Not yet implemented)");
         System.out.println("- logout: Log out of the current session.");
