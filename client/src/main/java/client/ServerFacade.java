@@ -77,7 +77,9 @@ public class ServerFacade {
 
         int responseCode = connection.getResponseCode();
         if (responseCode >= 200 && responseCode < 300) {
-            if (responseClass == Void.class) return null;
+            if (responseClass == Void.class) {
+                return null;
+            }
             try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
                 return gson.fromJson(reader, responseClass);
             }

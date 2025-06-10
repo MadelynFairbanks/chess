@@ -43,7 +43,9 @@ public class BoardPrinter {
     }
 
     private static String getUnicodePiece(ChessPiece piece) {
-        if (piece == null) return EscapeSequences.EMPTY;
+        if (piece == null) {
+            return EscapeSequences.EMPTY;
+        }
 
         return switch (piece.getTeamColor()) {
             case WHITE -> switch (piece.getPieceType()) {
