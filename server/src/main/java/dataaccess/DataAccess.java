@@ -25,6 +25,5 @@ public interface DataAccess {
     void updateGame(GameData game) throws DataAccessException;
 
     List<GameData> listGames() throws DataAccessException;
-
-    int generateGameID() throws DataAccessException;
+    
 }
