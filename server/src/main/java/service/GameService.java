@@ -114,20 +114,18 @@ public class GameService {
 
         String color = request.playerColor();
 
-        // If observing (null color), don't update game — just allow
-        if (color == null) {
-            return;
-        }
-
-        if (!color.equalsIgnoreCase("WHITE") && !color.equalsIgnoreCase("BLACK")) {
+        if (color != null && !color.equalsIgnoreCase("WHITE") && !color.equalsIgnoreCase("BLACK")) {
             throw new DataAccessException("Error: bad request");
         }
 
+
         // Check if spot already taken
-        if (color.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
+        if (color != null && color.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
+
             throw new DataAccessException("Error: already taken");
         }
-        if (color.equalsIgnoreCase("BLACK") && game.blackUsername() != null) {
+        if (color != null && color.equalsIgnoreCase("BLACK") && game.blackUsername() != null)
+        {
             throw new DataAccessException("Error: already taken");
         }
 
