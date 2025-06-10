@@ -12,23 +12,6 @@ public class MySqlDataAccess implements DataAccess {
     private final MySqlAuthTokenDAO authDAO = new MySqlAuthTokenDAO();
     private final MySqlGameDAO gameDAO = new MySqlGameDAO();
 
-    @Override
-    public int generateGameID() throws DataAccessException {
-        String sql = "INSERT INTO games (gameName, game) VALUES ('temp', '{}')";
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
-            } else {
-                throw new DataAccessException("Failed to generate game ID");
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Error generating game ID", e);
-        }
-    }
 
     @Override
     public List<GameData> listGames() throws DataAccessException {

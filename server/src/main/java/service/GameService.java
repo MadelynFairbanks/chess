@@ -14,45 +14,11 @@ import chess.ChessGame;
 
 public class GameService {
     private final DataAccess dataAccess;
-    private final AtomicInteger idCounter = new AtomicInteger(1); // auto-increment ID
 
     public GameService(DataAccess dataAccess) {
         this.dataAccess = dataAccess;
     }
 
-    public int createGame(String authToken, String gameName) throws DataAccessException {
-        System.out.println("✅ Entered GameService.createGame()");
-        System.out.println("authToken: " + authToken + ", gameName: " + gameName);
-
-        if (authToken == null || gameName == null || gameName.isEmpty()) {
-            System.out.println("❌ Bad request: null/empty input");
-            throw new DataAccessException("Error: bad request");
-        }
-
-        AuthData auth = dataAccess.getAuth(authToken);
-        if (auth == null) {
-            System.out.println("❌ Invalid auth token: " + authToken);
-            throw new DataAccessException("Error: unauthorized");
-        }
-
-        int gameID = idCounter.getAndIncrement();
-        System.out.println("✅ Generated game ID: " + gameID);
-
-        GameData game = new GameData(gameID, null, null, gameName, new chess.ChessGame());
-        System.out.println("✅ GameData object created");
-
-        try {
-            dataAccess.createGame(game);
-            System.out.println("✅ Game stored in database");
-        } catch (Exception e) {
-            System.out.println("❌ Failed to store game in database");
-            e.printStackTrace(); // <== this will finally show us the root cause
-            throw new DataAccessException("Error: failed to store game", e);
-        }
-        System.out.println("✅ Game successfully added to database");
-
-        return gameID;
-    }
 
 
     public List<GameData> listGames(String authToken) throws DataAccessException {

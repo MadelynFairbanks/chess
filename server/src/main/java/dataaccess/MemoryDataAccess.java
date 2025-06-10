@@ -76,8 +76,5 @@ public class MemoryDataAccess implements DataAccess {
         return new ArrayList<>(games.values());
     }
 
-    @Override
-    public int generateGameID() {
-        return nextGameID++;
-    }
+
 }
