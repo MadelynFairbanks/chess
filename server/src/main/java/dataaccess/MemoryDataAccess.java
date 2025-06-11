@@ -3,6 +3,8 @@ package dataaccess;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
+import websocket.commands.MakeMoveCommand;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -57,6 +59,12 @@ public class MemoryDataAccess implements DataAccess {
         games.put(game.gameID(), game);
         return game.gameID();
     }
+
+    @Override
+    public void makeMove(MakeMoveCommand command) throws DataAccessException {
+        throw new UnsupportedOperationException("makeMove not supported in memory DAO");
+    }
+
 
     @Override
     public GameData getGame(int gameID) {

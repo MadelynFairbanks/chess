@@ -3,6 +3,8 @@ package dataaccess;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
+import websocket.commands.MakeMoveCommand;
+
 import java.util.List;
 
 public interface DataAccess {
@@ -27,6 +29,9 @@ public interface DataAccess {
     List<GameData> listGames() throws DataAccessException;
 
     UserData getUserByAuthToken(String authToken) throws DataAccessException;
+
+    void makeMove(MakeMoveCommand command) throws DataAccessException;
+
 
 
 }

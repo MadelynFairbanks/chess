@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebSocket
 public class WebSocketHandler {
 
-    private static final ConcurrentHashMap<Integer, ConcurrentHashMap<Session, String>> gameSessions = new ConcurrentHashMap<>();
-    private static final Gson gson = new Gson();
+    private static final ConcurrentHashMap<Integer, ConcurrentHashMap<Session, String>> GAMESESSIONS = new ConcurrentHashMap<>();
+    private static final Gson GSON = new Gson();
     private final DataAccess dataAccess = new MySqlDataAccess();
 
     @OnWebSocketConnect
@@ -28,18 +28,18 @@ public class WebSocketHandler {
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
         System.out.println("WebSocket closed: " + session);
-        gameSessions.values().forEach(map -> map.remove(session));
+        GAMESESSIONS.values().forEach(map -> map.remove(session));
     }
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
         try {
-            UserGameCommand baseCommand = gson.fromJson(message, UserGameCommand.class);
+            UserGameCommand baseCommand = GSON.fromJson(message, UserGameCommand.class);
             switch (baseCommand.getCommandType()) {
-                case CONNECT -> handleConnect(session, gson.fromJson(message, ConnectCommand.class));
-                case MAKE_MOVE -> handleMove(session, gson.fromJson(message, MakeMoveCommand.class));
-                case LEAVE -> handleLeave(session, gson.fromJson(message, LeaveCommand.class));
-                case RESIGN -> handleResign(session, gson.fromJson(message, ResignCommand.class));
+                case CONNECT -> handleConnect(session, GSON.fromJson(message, ConnectCommand.class));
+                case MAKE_MOVE -> handleMove(session, GSON.fromJson(message, MakeMoveCommand.class));
+                case LEAVE -> handleLeave(session, GSON.fromJson(message, LeaveCommand.class));
+                case RESIGN -> handleResign(session, GSON.fromJson(message, ResignCommand.class));
                 default -> sendError(session, "Unknown command type.");
             }
         } catch (Exception e) {
@@ -49,8 +49,8 @@ public class WebSocketHandler {
     }
 
     private void handleConnect(Session session, ConnectCommand command) {
-        gameSessions.putIfAbsent(command.getGameID(), new ConcurrentHashMap<>());
-        gameSessions.get(command.getGameID()).put(session, command.getAuthToken());
+        GAMESESSIONS.putIfAbsent(command.getGameID(), new ConcurrentHashMap<>());
+        GAMESESSIONS.get(command.getGameID()).put(session, command.getAuthToken());
 
         try {
             GameData gameData = dataAccess.getGame(command.getGameID());
@@ -67,28 +67,30 @@ public class WebSocketHandler {
     }
 
     private void handleMove(Session session, MakeMoveCommand command) {
+        int gameID = command.getGameID();
         try {
-            // You will need to implement this method yourself
-            // For now assume it updates the DB successfully
-            int gameID = command.getGameID();
+            // Attempt to apply the move in the game
+            dataAccess.makeMove(command); // ✅ This throws if invalid
 
-            GameData updated = dataAccess.getGame(gameID);  // re-fetch after update
-            ServerMessage gameUpdate = new LoadGameMessage(updated.game());
-            broadcast(gameID, gameUpdate);
+            // Now that the move succeeded, update and broadcast the new game state
+            GameData updated = dataAccess.getGame(gameID);
+            broadcast(gameID, new LoadGameMessage(updated.game()));
 
             String player = getUsername(command.getAuthToken());
             String moveDesc = command.getMove().toString();
             broadcast(gameID, new NotificationMessage(player + " moved: " + moveDesc));
 
-            // TODO: handle check/checkmate notifications
+            // Optional: broadcast check/checkmate messages here
         } catch (Exception e) {
+            // ❌ Don't send game update — just send the error
             sendError(session, "Invalid move: " + e.getMessage());
         }
     }
 
+
     private void handleLeave(Session session, LeaveCommand command) {
         int gameID = command.getGameID();
-        gameSessions.getOrDefault(gameID, new ConcurrentHashMap<>()).remove(session);
+        GAMESESSIONS.getOrDefault(gameID, new ConcurrentHashMap<>()).remove(session);
 
         String player = getUsername(command.getAuthToken());
         broadcast(gameID, new NotificationMessage(player + " left the game."));
@@ -106,7 +108,7 @@ public class WebSocketHandler {
 
     private void send(Session session, ServerMessage message) {
         try {
-            session.getRemote().sendString(gson.toJson(message));
+            session.getRemote().sendString(GSON.toJson(message));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -117,11 +119,11 @@ public class WebSocketHandler {
     }
 
     private void broadcast(int gameID, ServerMessage message) {
-        gameSessions.getOrDefault(gameID, new ConcurrentHashMap<>()).keySet().forEach(session -> send(session, message));
+        GAMESESSIONS.getOrDefault(gameID, new ConcurrentHashMap<>()).keySet().forEach(session -> send(session, message));
     }
 
     private void broadcastToOthers(int gameID, Session except, ServerMessage message) {
-        gameSessions.getOrDefault(gameID, new ConcurrentHashMap<>()).keySet().stream()
+        GAMESESSIONS.getOrDefault(gameID, new ConcurrentHashMap<>()).keySet().stream()
                 .filter(session -> !session.equals(except))
                 .forEach(session -> send(session, message));
     }

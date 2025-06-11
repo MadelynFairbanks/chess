@@ -167,6 +167,11 @@ public class ChessGame {
         }
         return checking(teamColor);
     }
+    public boolean isGameOver() {
+        // Optional: improve later with checkmate/stalemate logic
+        return false;
+    }
+
 
     public void setBoard(ChessBoard board) {
         this.board = board;
