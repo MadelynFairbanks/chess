@@ -26,4 +26,7 @@ public interface DataAccess {
 
     List<GameData> listGames() throws DataAccessException;
 
+    UserData getUserByAuthToken(String authToken) throws DataAccessException;
+
+
 }

@@ -76,5 +76,10 @@ public class MemoryDataAccess implements DataAccess {
         return new ArrayList<>(games.values());
     }
 
+    @Override
+    public UserData getUserByAuthToken(String authToken) throws DataAccessException {
+        throw new UnsupportedOperationException("getUserByAuthToken not supported in memory mode.");
+    }
+
 
 }

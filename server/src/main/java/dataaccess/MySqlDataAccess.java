@@ -64,4 +64,35 @@ public class MySqlDataAccess implements DataAccess {
     public void deleteAuth(String token) throws DataAccessException {
         authDAO.deleteAuth(token);
     }
+
+    @Override
+    public UserData getUserByAuthToken(String authToken) throws DataAccessException {
+        String sql = """
+        SELECT u.username, u.password, u.email
+        FROM users u
+        JOIN auth a ON u.username = a.username
+        WHERE a.authToken = ?;
+    """;
+
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, authToken);
+
+            try (var rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String username = rs.getString("username");
+                    String password = rs.getString("password");
+                    String email = rs.getString("email");
+                    return new UserData(username, password, email);
+                } else {
+                    throw new DataAccessException("Invalid auth token.");
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Error fetching user from auth token", e);
+        }
+    }
+
 }

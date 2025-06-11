@@ -128,7 +128,7 @@ public class WebSocketHandler {
 
     private String getUsername(String authToken) {
         try {
-            return dataAccess.getUser(authToken).username();  // Update this to match your actual DAO method
+            return dataAccess.getUserByAuthToken(authToken).username();
         } catch (Exception e) {
             return "Unknown";
         }
