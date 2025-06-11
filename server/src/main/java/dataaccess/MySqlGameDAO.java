@@ -34,18 +34,32 @@ public class MySqlGameDAO {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            stmt.setString(1, game.whiteUsername());
-            stmt.setString(2, game.blackUsername());
-            stmt.setString(3, game.gameName());
-            stmt.setString(4, new Gson().toJson(game.game())); // save game as JSON string
+            if (game.whiteUsername() == null) {
+                stmt.setNull(1, Types.VARCHAR);
+            } else {
+                stmt.setString(1, game.whiteUsername());
+            }
+
+            if (game.blackUsername() == null) {
+                stmt.setNull(2, Types.VARCHAR);
+            } else {
+                stmt.setString(2, game.blackUsername());
+            }
+
+            if (game.gameName() == null) {
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(3, game.gameName());
+            }
+
+            stmt.setString(4, new Gson().toJson(game.game())); // ChessGame must be non-null
             stmt.setBoolean(5, game.gameOver());
 
             stmt.executeUpdate();
 
-            // Get that shiny new gameID from the DB
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
-                return rs.getInt(1); // return generated gameID
+                return rs.getInt(1);
             } else {
                 throw new DataAccessException("Unable to retrieve generated game ID");
             }
@@ -53,6 +67,7 @@ public class MySqlGameDAO {
             throw new DataAccessException("Unable to insert game", e);
         }
     }
+
 
     // Get one specific game using its ID
     public GameData findGame(int gameID) throws DataAccessException {
