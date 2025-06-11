@@ -154,8 +154,34 @@ public class DatabaseManager {
     }
 
     public static void configureDatabase() throws DataAccessException {
-        dataAccess = new MySqlDataAccess(); // assumes you already implemented this class
+        String url = System.getenv("DB_URL");
+        String user = System.getenv("DB_USER");
+        String password = System.getenv("DB_PASSWORD");
+
+        if (url == null || user == null || password == null) {
+            throw new DataAccessException("Missing required DB environment variables.");
+        }
+
+        // Parse DB name from URL
+        databaseName = url.substring(url.lastIndexOf("/") + 1);
+        String noDbUrl = url.substring(0, url.lastIndexOf("/") + 1);
+        dbUsername = user;
+        dbPassword = password;
+        connectionUrl = noDbUrl; // temp for creation
+
+        try (Connection conn = DriverManager.getConnection(noDbUrl, user, password);
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + databaseName);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to create database: " + databaseName, e);
+        }
+
+        // Now reconfigure the real connectionUrl for normal use
+        connectionUrl = url;
+        dataAccess = new MySqlDataAccess();
+        createTables(); // make sure tables exist in the new DB
     }
+
     public static DataAccess getDataAccess() {
         return dataAccess;
     }
