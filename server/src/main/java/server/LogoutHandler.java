@@ -22,12 +22,29 @@ public class LogoutHandler implements Route {
         try {
             String authToken = req.headers("authorization");
             service.logout(authToken);
-            return JsonResponse.success(res, 200, Map.of());
+            res.status(200);
+            return gson.toJson(Map.of());
         } catch (DataAccessException e) {
-            return JsonResponse.error(res, e.getMessage());
+            String msg = e.getMessage();
+            String lower = msg.toLowerCase();
+
+            if (lower.contains("unauthorized")) {
+                res.status(401);
+            } else if (lower.contains("internal server error")) {
+                res.status(500);
+            } else {
+                res.status(500);
+            }
+
+            // Ensure message starts with "Error: "
+            if (!msg.toLowerCase().startsWith("error")) {
+                msg = "Error: " + msg;
+            }
+
+            return gson.toJson(Map.of("message", msg));
         } catch (Exception e) {
-            return JsonResponse.exception(res, e);
+            res.status(500);
+            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
-
 }

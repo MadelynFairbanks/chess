@@ -22,7 +22,6 @@ public class AuthDAOTest {
         DatabaseManager.createDatabase();
         DatabaseManager.createTables();
 
-
         // Clear tables in correct order (auth_tokens depends on users)
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement()) {

@@ -5,12 +5,14 @@ import chess.ChessGame;
 import model.UserData;
 import org.junit.jupiter.api.*;
 
+
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameDAOTest {
     private MySqlDataAccess dataAccess;
+
     private MySqlGameDAO gameDAO;
     private MySqlUserDAO userDAO;
 
@@ -19,8 +21,7 @@ public class GameDAOTest {
         DatabaseManager.createDatabase();
         DatabaseManager.createTables();
 
-
-        dataAccess = new MySqlDataAccess();
+        dataAccess = new MySqlDataAccess(); // ✅ create full data access
         gameDAO = new MySqlGameDAO();
         userDAO = new MySqlUserDAO();
 
@@ -31,12 +32,14 @@ public class GameDAOTest {
         userDAO.insertUser(new UserData("blackPlayer", "pass456", "black@example.com"));
     }
 
+
+
     @Test
     public void insertAndFindGameSuccess() throws DataAccessException {
-        GameData game = new GameData(-1, "whitePlayer", "blackPlayer", "Test Game", new ChessGame());
-        int gameID = gameDAO.insertGame(game);
+        GameData game = new GameData(1, "whitePlayer", "blackPlayer", "Test Game", new chess.ChessGame());
+        gameDAO.insertGame(game);
 
-        GameData retrieved = gameDAO.findGame(gameID);
+        GameData retrieved = gameDAO.findGame(1);
 
         assertNotNull(retrieved);
         assertEquals("Test Game", retrieved.gameName());
@@ -52,40 +55,32 @@ public class GameDAOTest {
 
     @Test
     public void listGamesContainsInsertedGame() throws DataAccessException {
-        GameData game1 = new GameData(-1, "whitePlayer", "blackPlayer", "Game One", new ChessGame());
-        GameData game2 = new GameData(-1, "whitePlayer", "blackPlayer", "Game Two", new ChessGame());
-        int id1 = gameDAO.insertGame(game1);
-        int id2 = gameDAO.insertGame(game2);
-
-        // Update objects to include real DB-assigned IDs
-        game1 = new GameData(id1, game1.whiteUsername(), game1.blackUsername(), game1.gameName(), game1.game());
-        game2 = new GameData(id2, game2.whiteUsername(), game2.blackUsername(), game2.gameName(), game2.game());
-
-        // 🔒 Make final copies for lambda access
-        final GameData finalGame1 = game1;
-        final GameData finalGame2 = game2;
+        GameData game1 = new GameData(1, "whitePlayer", "blackPlayer", "Game One", new chess.ChessGame());
+        GameData game2 = new GameData(2, "whitePlayer", "blackPlayer", "Game Two", new chess.ChessGame());
+        gameDAO.insertGame(game1);
+        gameDAO.insertGame(game2);
 
         List<GameData> games = gameDAO.listGames();
+
         assertEquals(2, games.size());
 
         boolean foundGame1 = games.stream().anyMatch(g ->
-                g.gameID() == finalGame1.gameID() &&
-                        g.gameName().equals(finalGame1.gameName()) &&
-                        g.whiteUsername().equals(finalGame1.whiteUsername()) &&
-                        g.blackUsername().equals(finalGame1.blackUsername())
+                g.gameID() == game1.gameID() &&
+                        g.gameName().equals(game1.gameName()) &&
+                        g.whiteUsername().equals(game1.whiteUsername()) &&
+                        g.blackUsername().equals(game1.blackUsername())
         );
 
         boolean foundGame2 = games.stream().anyMatch(g ->
-                g.gameID() == finalGame2.gameID() &&
-                        g.gameName().equals(finalGame2.gameName()) &&
-                        g.whiteUsername().equals(finalGame2.whiteUsername()) &&
-                        g.blackUsername().equals(finalGame2.blackUsername())
+                g.gameID() == game2.gameID() &&
+                        g.gameName().equals(game2.gameName()) &&
+                        g.whiteUsername().equals(game2.whiteUsername()) &&
+                        g.blackUsername().equals(game2.blackUsername())
         );
 
         assertTrue(foundGame1, "Expected game1 was not found in listGames result.");
         assertTrue(foundGame2, "Expected game2 was not found in listGames result.");
     }
-
 
     @Test
     void listGamesEmptyInitially() throws DataAccessException {
@@ -97,8 +92,10 @@ public class GameDAOTest {
     @Test
     void updateGameSuccess() throws DataAccessException {
         ChessGame game = new ChessGame();
-        GameData original = new GameData(-1, null, null, "Original Game", game);
-        int gameID = gameDAO.insertGame(original);
+        int gameID = 987654321; // 🛑 Must be a unique ID not used elsewhere
+
+        // Insert game with required non-null gameName
+        gameDAO.insertGame(new GameData(gameID, null, null, "Original Game", game));
 
         ChessGame updatedGame = new ChessGame();
         GameData updated = new GameData(gameID, "whitePlayer", "blackPlayer", "Updated Game", updatedGame);
@@ -113,14 +110,18 @@ public class GameDAOTest {
         assertNotNull(retrieved.game());
     }
 
+
+
     @Test
     void updateGameNonexistentId() throws DataAccessException {
-        int nonexistentId = 999999999;
+        int nonexistentId = 999999999; // deliberately non-existent ID
         ChessGame game = new ChessGame();
         GameData gameData = new GameData(nonexistentId, "ghostWhite", "ghostBlack", "Ghost Game", game);
 
+        // Attempt to update (should not throw)
         assertDoesNotThrow(() -> gameDAO.updateGame(gameData));
 
+        // Ensure it wasn't silently inserted
         GameData retrieved = gameDAO.findGame(nonexistentId);
         assertNull(retrieved, "Game should not exist after updating nonexistent ID");
     }
@@ -130,7 +131,10 @@ public class GameDAOTest {
         assertThrows(DataAccessException.class, () -> {
             GameData duplicate = new GameData(987654324, "test", null, "Dup Test", new ChessGame());
             gameDAO.insertGame(duplicate);
-            gameDAO.insertGame(duplicate); // second insert should fail
+            gameDAO.insertGame(duplicate); // second insert triggers the exception
         });
     }
+
+
+
 }

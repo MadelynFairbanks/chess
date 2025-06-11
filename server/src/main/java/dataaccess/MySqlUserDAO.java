@@ -13,14 +13,12 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class MySqlUserDAO {
 
-    // Adds a new user to the database (and hashes the password like a responsible dev)
     public void insertUser(UserData user) throws DataAccessException {
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            // Salting + hashing the password because storing raw passwords is a no-go
             String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
 
             stmt.setString(1, user.username());
@@ -33,7 +31,6 @@ public class MySqlUserDAO {
         }
     }
 
-    // Clears all users from the DB (good for testing or when we want a clean slate)
     public void clear() throws DataAccessException {
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement()) {
@@ -43,7 +40,6 @@ public class MySqlUserDAO {
         }
     }
 
-    // Looks up a user by username and returns their data (null if they don’t exist)
     public UserData findUser(String username) throws DataAccessException {
         String sql = "SELECT * FROM users WHERE username = ?";
 
@@ -65,14 +61,13 @@ public class MySqlUserDAO {
         }
     }
 
-    // Verifies the given password against the hashed one in the DB
     public boolean verifyPassword(String username, String inputPassword) throws DataAccessException {
         UserData user = findUser(username);
         if (user == null) {
-            return false; // No such user
+            return false;
         }
 
-        // BCrypt does the heavy lifting to check the hash
+
         return BCrypt.checkpw(inputPassword, user.password());
     }
 }

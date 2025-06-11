@@ -13,7 +13,6 @@ public class UserDAOTest {
     public void setup() throws DataAccessException {
         DatabaseManager.createDatabase();
         DatabaseManager.createTables();
-
         userDAO = new MySqlUserDAO();
     }
 

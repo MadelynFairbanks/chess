@@ -20,7 +20,6 @@ public class PostloginRepl {
         this.facade = facade;
     }
 
-    // Main command loop after login
     public void run() {
         System.out.println("Entered post-login UI for user: " + auth.username());
         Scanner scanner = new Scanner(System.in);
@@ -54,7 +53,6 @@ public class PostloginRepl {
         }
     }
 
-    // Creating a new game
     private void handleCreate(Scanner scanner) throws Exception {
         System.out.print("Game name: ");
         String gameName = scanner.nextLine();
