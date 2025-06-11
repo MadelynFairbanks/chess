@@ -111,4 +111,37 @@ public class MySqlGameDAO {
             throw new DataAccessException("Unable to clear games", e);
         }
     }
+
+    public void setWhiteUsername(int gameID, String username) throws DataAccessException {
+        String sql = "UPDATE games SET whiteUsername = ? WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+            if (username == null) {
+                stmt.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(1, username);
+            }
+            stmt.setInt(2, gameID);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to set whiteUsername", e);
+        }
+    }
+
+    public void setBlackUsername(int gameID, String username) throws DataAccessException {
+        String sql = "UPDATE games SET blackUsername = ? WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+            if (username == null) {
+                stmt.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(1, username);
+            }
+            stmt.setInt(2, gameID);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to set blackUsername", e);
+        }
+    }
+
 }

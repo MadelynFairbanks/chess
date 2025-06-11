@@ -145,6 +145,16 @@ public class GameWebSocketHandler {
             if (username != null) {
                 usernameToSession.remove(username);
                 gameToUsers.getOrDefault(cmd.getGameID(), new HashSet<>()).remove(username);
+
+                GameData gameData = gameDAO.findGame(cmd.getGameID());
+                if (gameData != null) {
+                    if (username.equals(gameData.whiteUsername())) {
+                        gameDAO.setWhiteUsername(cmd.getGameID(), null);
+                    } else if (username.equals(gameData.blackUsername())) {
+                        gameDAO.setBlackUsername(cmd.getGameID(), null);
+                    }
+                }
+
                 broadcastExcept(cmd.getGameID(), username,
                         new NotificationMessage(username + " left the game."));
             }
@@ -152,6 +162,7 @@ public class GameWebSocketHandler {
             send(session, new ErrorMessage("Error during leave: " + e.getMessage()));
         }
     }
+
 
     private void handleResign(Session session, ResignCommand cmd) {
         try {
