@@ -105,23 +105,39 @@ public class MySqlDataAccess implements DataAccess {
     public void makeMove(MakeMoveCommand command) throws DataAccessException {
         int gameID = command.getGameID();
         ChessMove move = command.getMove();
+        String authToken = command.getAuthToken();
 
         GameData gameData = getGame(gameID);
         ChessGame game = gameData.game();
 
+        // Check if user is part of this game and has the right color
+        UserData user = getUserByAuthToken(authToken);
+        String username = user.username();
+
+        var white = gameData.whiteUsername();
+        var black = gameData.blackUsername();
+        var currentTurn = game.getTeamTurn();
+
+        if (currentTurn == ChessGame.TeamColor.WHITE && !username.equals(white)) {
+            throw new DataAccessException("Not your turn (WHITE).");
+        }
+        if (currentTurn == ChessGame.TeamColor.BLACK && !username.equals(black)) {
+            throw new DataAccessException("Not your turn (BLACK).");
+        }
+
         try {
-            game.makeMove(move); // might throw InvalidMoveException
+            game.makeMove(move);
         } catch (Exception e) {
             throw new DataAccessException("Illegal move: " + e.getMessage());
         }
 
-        // Update game state in DB
+        // Save updated game state
         String sql = "UPDATE games SET game = ?, gameOver = ? WHERE gameID = ?";
         try (var conn = DatabaseManager.getConnection();
              var stmt = conn.prepareStatement(sql)) {
 
             String updatedJson = new Gson().toJson(game);
-            boolean gameOver = game.isGameOver(); // you'll need this method or logic
+            boolean gameOver = game.isGameOver();
 
             stmt.setString(1, updatedJson);
             stmt.setBoolean(2, gameOver);

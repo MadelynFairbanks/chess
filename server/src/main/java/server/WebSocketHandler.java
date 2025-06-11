@@ -69,10 +69,10 @@ public class WebSocketHandler {
     private void handleMove(Session session, MakeMoveCommand command) {
         int gameID = command.getGameID();
         try {
-            // Attempt to apply the move in the game
-            dataAccess.makeMove(command); // ✅ This throws if invalid
+            // Attempt to apply the move
+            dataAccess.makeMove(command);
 
-            // Now that the move succeeded, update and broadcast the new game state
+            // Now update and broadcast new game state
             GameData updated = dataAccess.getGame(gameID);
             broadcast(gameID, new LoadGameMessage(updated.game()));
 
@@ -80,12 +80,11 @@ public class WebSocketHandler {
             String moveDesc = command.getMove().toString();
             broadcast(gameID, new NotificationMessage(player + " moved: " + moveDesc));
 
-            // Optional: broadcast check/checkmate messages here
         } catch (Exception e) {
-            // ❌ Don't send game update — just send the error
             sendError(session, "Invalid move: " + e.getMessage());
         }
     }
+
 
 
     private void handleLeave(Session session, LeaveCommand command) {
