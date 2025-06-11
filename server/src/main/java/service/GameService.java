@@ -50,7 +50,8 @@ public class GameService {
             throw new DataAccessException("Error: bad request");
         }
 
-        GameData newGame = new GameData(-1, null, null, request.gameName(), new ChessGame());
+        GameData newGame = new GameData(-1, null, null, request.gameName(), new ChessGame(), false);
+
         int gameID = dataAccess.createGame(newGame);  // Create + return generated ID
 
 
@@ -100,7 +101,8 @@ public class GameService {
                 (color != null && color.equalsIgnoreCase("WHITE")) ? auth.username() : game.whiteUsername(),
                 (color != null && color.equalsIgnoreCase("BLACK")) ? auth.username() : game.blackUsername(),
                 game.gameName(),
-                game.game()
+                game.game(),
+                game.gameOver()
         );
 
         dataAccess.updateGame(updatedGame);

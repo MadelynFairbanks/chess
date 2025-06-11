@@ -36,7 +36,7 @@ public class GameDAOTest {
 
     @Test
     public void insertAndFindGameSuccess() throws DataAccessException {
-        GameData game = new GameData(1, "whitePlayer", "blackPlayer", "Test Game", new chess.ChessGame());
+        GameData game = new GameData(1, "whitePlayer", "blackPlayer", "Test Game", new chess.ChessGame(), false);
         gameDAO.insertGame(game);
 
         GameData retrieved = gameDAO.findGame(1);
@@ -55,8 +55,8 @@ public class GameDAOTest {
 
     @Test
     public void listGamesContainsInsertedGame() throws DataAccessException {
-        GameData game1 = new GameData(1, "whitePlayer", "blackPlayer", "Game One", new chess.ChessGame());
-        GameData game2 = new GameData(2, "whitePlayer", "blackPlayer", "Game Two", new chess.ChessGame());
+        GameData game1 = new GameData(1, "whitePlayer", "blackPlayer", "Game One", new chess.ChessGame(), false);
+        GameData game2 = new GameData(2, "whitePlayer", "blackPlayer", "Game Two", new chess.ChessGame(), false);
         gameDAO.insertGame(game1);
         gameDAO.insertGame(game2);
 
@@ -95,10 +95,10 @@ public class GameDAOTest {
         int gameID = 987654321; // 🛑 Must be a unique ID not used elsewhere
 
         // Insert game with required non-null gameName
-        gameDAO.insertGame(new GameData(gameID, null, null, "Original Game", game));
+        gameDAO.insertGame(new GameData(gameID, null, null, "Original Game", game, false));
 
         ChessGame updatedGame = new ChessGame();
-        GameData updated = new GameData(gameID, "whitePlayer", "blackPlayer", "Updated Game", updatedGame);
+        GameData updated = new GameData(gameID, "whitePlayer", "blackPlayer", "Updated Game", updatedGame, false);
 
         gameDAO.updateGame(updated);
 
@@ -116,7 +116,7 @@ public class GameDAOTest {
     void updateGameNonexistentId() throws DataAccessException {
         int nonexistentId = 999999999; // deliberately non-existent ID
         ChessGame game = new ChessGame();
-        GameData gameData = new GameData(nonexistentId, "ghostWhite", "ghostBlack", "Ghost Game", game);
+        GameData gameData = new GameData(nonexistentId, "ghostWhite", "ghostBlack", "Ghost Game", game, false);
 
         // Attempt to update (should not throw)
         assertDoesNotThrow(() -> gameDAO.updateGame(gameData));
@@ -129,7 +129,7 @@ public class GameDAOTest {
     @Test
     void insertGameDuplicateId() {
         assertThrows(DataAccessException.class, () -> {
-            GameData duplicate = new GameData(987654324, "test", null, "Dup Test", new ChessGame());
+            GameData duplicate = new GameData(987654324, "test", null, "Dup Test", new ChessGame(), false);
             gameDAO.insertGame(duplicate);
             gameDAO.insertGame(duplicate); // second insert triggers the exception
         });
