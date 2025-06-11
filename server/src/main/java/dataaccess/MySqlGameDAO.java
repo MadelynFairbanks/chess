@@ -34,29 +34,16 @@ public class MySqlGameDAO {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            if (game.whiteUsername() == null) {
-                stmt.setNull(1, Types.VARCHAR);
-            } else {
-                stmt.setString(1, game.whiteUsername());
-            }
+            stmt.setString(1, game.whiteUsername());
+            stmt.setString(2, game.blackUsername());
+            stmt.setString(3, game.gameName());
 
-            if (game.blackUsername() == null) {
-                stmt.setNull(2, Types.VARCHAR);
-            } else {
-                stmt.setString(2, game.blackUsername());
-            }
+            // TEMP: store empty JSON instead of full game state
+            stmt.setString(4, "{}");
 
-            if (game.gameName() == null) {
-                stmt.setNull(3, Types.VARCHAR);
-            } else {
-                stmt.setString(3, game.gameName());
-            }
-
-            stmt.setString(4, new Gson().toJson(game.game())); // ChessGame must be non-null
             stmt.setBoolean(5, game.gameOver());
 
             stmt.executeUpdate();
-
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
                 return rs.getInt(1);
@@ -67,6 +54,7 @@ public class MySqlGameDAO {
             throw new DataAccessException("Unable to insert game", e);
         }
     }
+
 
 
     // Get one specific game using its ID
