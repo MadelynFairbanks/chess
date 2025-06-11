@@ -22,6 +22,8 @@ public class Server {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
 
+        Spark.webSocket("/ws", GameWebSocketHandler.class);
+
         try {
             DatabaseManager.createDatabase();
             DatabaseManager.createTables(); // ✅ Ensure tables exist before any endpoint runs
@@ -64,12 +66,8 @@ public class Server {
             res.body("{\"message\":\"Database error\"}");
         });
 
-        Spark.webSocket("/ws", new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(GameWebSocketHandler.class);
-            }
-        });
+
+
 
         //This line initializes the server and can be removed once you have a functioning endpoint
         Spark.init();
