@@ -9,6 +9,8 @@ public class DatabaseManager {
     private static String dbUsername;
     private static String dbPassword;
     private static String connectionUrl;
+    private static DataAccess dataAccess;
+
 
     /*
      * This runs when the class loads—grabs all the database settings
@@ -150,5 +152,13 @@ public class DatabaseManager {
         var port = Integer.parseInt(props.getProperty("db.port"));
         connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
     }
+
+    public static void configureDatabase() throws DataAccessException {
+        dataAccess = new MySqlDataAccess(); // assumes you already implemented this class
+    }
+    public static DataAccess getDataAccess() {
+        return dataAccess;
+    }
+
 
 }

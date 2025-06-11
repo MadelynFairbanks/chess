@@ -1,15 +1,12 @@
 package server;
 
+import dataaccess.*;
 import spark.*;
-import dataaccess.MemoryDataAccess;
 import service.ClearService;
 import server.RegisterHandler;
 import service.UserService;
 import server.CreateGameHandler;
 import service.GameService;
-import dataaccess.MySqlDataAccess;
-import dataaccess.DataAccessException;
-import dataaccess.DatabaseManager;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import server.websocket.GameWebSocketHandler;
@@ -25,13 +22,12 @@ public class Server {
         Spark.webSocket("/ws", GameWebSocketHandler.class);
 
         try {
-            DatabaseManager.createDatabase();
-            DatabaseManager.createTables(); // Ensuring tables exist before any endpoint runs
+            DatabaseManager.configureDatabase(); // sets up DB + stores DAO
         } catch (DataAccessException ex) {
             ex.printStackTrace();
         }
+        DataAccess mySqlData = DatabaseManager.getDataAccess();
 
-        MySqlDataAccess mySqlData = new MySqlDataAccess();
 
 
         // Register your endpoints and handle exceptions here.
