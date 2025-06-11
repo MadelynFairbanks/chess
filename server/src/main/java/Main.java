@@ -5,14 +5,13 @@ import dataaccess.DataAccessException;
 public class Main {
     public static void main(String[] args) {
         try {
-            DatabaseManager.configureDatabase(); // ✅ THIS is the missing link
-            System.out.println("Database configured and ready.");
+            DatabaseManager.createDatabase();
+            DatabaseManager.createTables();
+            System.out.println("Database created or already exists.");
         } catch (DataAccessException e) {
-            System.out.println("Failed to configure database:");
+            System.out.println("Failed to create database:");
             e.printStackTrace();
         }
-
         new Server().run(8080);
     }
 }
-
