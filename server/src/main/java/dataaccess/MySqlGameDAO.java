@@ -38,22 +38,22 @@ public class MySqlGameDAO {
             stmt.setString(2, game.blackUsername());
             stmt.setString(3, game.gameName());
 
-            // TEMP: store empty JSON instead of full game state
             String gameJson = game.game() == null
-                    ? new Gson().toJson(new ChessGame()) // default to empty game
+                    ? new Gson().toJson(new ChessGame())
                     : new Gson().toJson(game.game());
             stmt.setString(4, gameJson);
-
-            System.out.println("Inserting game: " + game.gameName());
-            System.out.println("Serialized game: " + gameJson);
-
 
             stmt.setBoolean(5, game.gameOver());
 
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
-                return rs.getInt(1);
+                int id = rs.getInt(1);
+
+                // ✅ This is the key part: update the original game object with the generated ID
+                // (You can either mutate it if it's mutable, or log this if not used downstream)
+                System.out.println("🟢 Inserted game with ID: " + id);
+                return id;
             } else {
                 throw new DataAccessException("Unable to retrieve generated game ID");
             }
@@ -61,6 +61,7 @@ public class MySqlGameDAO {
             throw new DataAccessException("Unable to insert game", e);
         }
     }
+
 
 
 
