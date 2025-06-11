@@ -53,7 +53,7 @@ public class GameService {
         }
 
         // Set up a new game with default values
-        GameData newGame = new GameData(-1, null, null, request.gameName(), new ChessGame(), false);
+        GameData newGame = new GameData(-1, null, null, request.gameName(), new ChessGame());
 
         int gameID = dataAccess.createGame(newGame);  // Create + return generated ID
 
@@ -106,8 +106,7 @@ public class GameService {
                 (color != null && color.equalsIgnoreCase("WHITE")) ? auth.username() : game.whiteUsername(),
                 (color != null && color.equalsIgnoreCase("BLACK")) ? auth.username() : game.blackUsername(),
                 game.gameName(),
-                game.game(),
-                game.gameOver()
+                game.game()
         );
 
         dataAccess.updateGame(updatedGame);

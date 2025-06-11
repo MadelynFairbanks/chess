@@ -66,7 +66,7 @@ public class GameServiceTest {
 
         // Create and store a game manually
         ChessGame gameLogic = new ChessGame();
-        GameData game = new GameData(1, null, null, "Simple Game", gameLogic, false);
+        GameData game = new GameData(1, null, null, "Simple Game", gameLogic);
         dataAccess.createGame(game);
 
         // Create the join request

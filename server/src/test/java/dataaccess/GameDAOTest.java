@@ -16,7 +16,9 @@ public class GameDAOTest {
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        DatabaseManager.configureDatabase();
+        DatabaseManager.createDatabase();
+        DatabaseManager.createTables();
+
 
         dataAccess = new MySqlDataAccess();
         gameDAO = new MySqlGameDAO();
@@ -31,7 +33,7 @@ public class GameDAOTest {
 
     @Test
     public void insertAndFindGameSuccess() throws DataAccessException {
-        GameData game = new GameData(-1, "whitePlayer", "blackPlayer", "Test Game", new ChessGame(), false);
+        GameData game = new GameData(-1, "whitePlayer", "blackPlayer", "Test Game", new ChessGame());
         int gameID = gameDAO.insertGame(game);
 
         GameData retrieved = gameDAO.findGame(gameID);
@@ -50,14 +52,14 @@ public class GameDAOTest {
 
     @Test
     public void listGamesContainsInsertedGame() throws DataAccessException {
-        GameData game1 = new GameData(-1, "whitePlayer", "blackPlayer", "Game One", new ChessGame(), false);
-        GameData game2 = new GameData(-1, "whitePlayer", "blackPlayer", "Game Two", new ChessGame(), false);
+        GameData game1 = new GameData(-1, "whitePlayer", "blackPlayer", "Game One", new ChessGame());
+        GameData game2 = new GameData(-1, "whitePlayer", "blackPlayer", "Game Two", new ChessGame());
         int id1 = gameDAO.insertGame(game1);
         int id2 = gameDAO.insertGame(game2);
 
         // Update objects to include real DB-assigned IDs
-        game1 = new GameData(id1, game1.whiteUsername(), game1.blackUsername(), game1.gameName(), game1.game(), game1.gameOver());
-        game2 = new GameData(id2, game2.whiteUsername(), game2.blackUsername(), game2.gameName(), game2.game(), game2.gameOver());
+        game1 = new GameData(id1, game1.whiteUsername(), game1.blackUsername(), game1.gameName(), game1.game());
+        game2 = new GameData(id2, game2.whiteUsername(), game2.blackUsername(), game2.gameName(), game2.game());
 
         // 🔒 Make final copies for lambda access
         final GameData finalGame1 = game1;
@@ -95,11 +97,11 @@ public class GameDAOTest {
     @Test
     void updateGameSuccess() throws DataAccessException {
         ChessGame game = new ChessGame();
-        GameData original = new GameData(-1, null, null, "Original Game", game, false);
+        GameData original = new GameData(-1, null, null, "Original Game", game);
         int gameID = gameDAO.insertGame(original);
 
         ChessGame updatedGame = new ChessGame();
-        GameData updated = new GameData(gameID, "whitePlayer", "blackPlayer", "Updated Game", updatedGame, false);
+        GameData updated = new GameData(gameID, "whitePlayer", "blackPlayer", "Updated Game", updatedGame);
 
         gameDAO.updateGame(updated);
 
@@ -115,7 +117,7 @@ public class GameDAOTest {
     void updateGameNonexistentId() throws DataAccessException {
         int nonexistentId = 999999999;
         ChessGame game = new ChessGame();
-        GameData gameData = new GameData(nonexistentId, "ghostWhite", "ghostBlack", "Ghost Game", game, false);
+        GameData gameData = new GameData(nonexistentId, "ghostWhite", "ghostBlack", "Ghost Game", game);
 
         assertDoesNotThrow(() -> gameDAO.updateGame(gameData));
 
@@ -126,7 +128,7 @@ public class GameDAOTest {
     @Test
     void insertGameDuplicateId() {
         assertThrows(DataAccessException.class, () -> {
-            GameData duplicate = new GameData(987654324, "test", null, "Dup Test", new ChessGame(), false);
+            GameData duplicate = new GameData(987654324, "test", null, "Dup Test", new ChessGame());
             gameDAO.insertGame(duplicate);
             gameDAO.insertGame(duplicate); // second insert should fail
         });

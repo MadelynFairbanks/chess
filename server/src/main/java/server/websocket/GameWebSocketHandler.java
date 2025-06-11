@@ -98,10 +98,6 @@ public class GameWebSocketHandler {
                 return;
             }
 
-            if (gameData.gameOver()) {
-                send(session, new ErrorMessage("Error: Game is already over"));
-                return;
-            }
 
             ChessGame game = gameData.game();
             var move = cmd.getMove();
@@ -132,8 +128,7 @@ public class GameWebSocketHandler {
                     gameData.whiteUsername(),
                     gameData.blackUsername(),
                     gameData.gameName(),
-                    game,
-                    false // Game is not over yet
+                    game
             ));
 
             // Let everyone know the new state + announce the move
@@ -192,10 +187,6 @@ public class GameWebSocketHandler {
                 return;
             }
 
-            if (gameData.gameOver()) {
-                send(session, new ErrorMessage("Error: Game is already over"));
-                return;
-            }
 
             ChessGame game = gameData.game();
             String username = auth.username();
@@ -212,8 +203,7 @@ public class GameWebSocketHandler {
                     gameData.whiteUsername(),
                     gameData.blackUsername(),
                     gameData.gameName(),
-                    game,
-                    true // Game is over now
+                    game
             ));
 
 

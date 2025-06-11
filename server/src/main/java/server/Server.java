@@ -25,7 +25,9 @@ public class Server {
         Spark.webSocket("/ws", GameWebSocketHandler.class);
 
         try {
-            DatabaseManager.configureDatabase(); // Ensuring tables exist before any endpoint runs
+            DatabaseManager.createDatabase();
+            DatabaseManager.createTables();
+// Ensuring tables exist before any endpoint runs
         } catch (DataAccessException ex) {
             ex.printStackTrace();
         }

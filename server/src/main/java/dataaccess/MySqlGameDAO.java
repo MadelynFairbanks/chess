@@ -43,8 +43,6 @@ public class MySqlGameDAO {
                     : new Gson().toJson(game.game());
             stmt.setString(4, gameJson);
 
-            stmt.setBoolean(5, game.gameOver());
-
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
@@ -84,8 +82,7 @@ public class MySqlGameDAO {
                         rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("gameName"),
-                        chessGame,
-                        gameOver
+                        chessGame
                 );
             }
             return null; // Game not found
@@ -104,7 +101,6 @@ public class MySqlGameDAO {
             stmt.setString(2, game.whiteUsername());
             stmt.setString(3, game.blackUsername());
             stmt.setString(4, new Gson().toJson(game.game()));
-            stmt.setBoolean(5, game.gameOver());
             stmt.setInt(6, game.gameID());
 
             stmt.executeUpdate();
@@ -127,8 +123,7 @@ public class MySqlGameDAO {
                         rs.getString("whiteUsername"),
                         rs.getString("blackUsername"),
                         rs.getString("gameName"),
-                        new Gson().fromJson(rs.getString("game"), ChessGame.class),
-                        rs.getBoolean("gameOver")
+                        new Gson().fromJson(rs.getString("game"), ChessGame.class)
                 ));
             }
         } catch (SQLException e) {
