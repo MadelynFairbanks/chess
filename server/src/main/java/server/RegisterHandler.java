@@ -30,37 +30,19 @@ public class RegisterHandler implements Route {
                     request.username() == null || request.username().isBlank() ||
                     request.password() == null || request.password().isBlank() ||
                     request.email() == null || request.email().isBlank()) {
-                res.status(400);
-                return gson.toJson(Map.of("message", "Error: bad request"));
+                return JsonResponse.error(res, "bad request");
             }
 
             UserData user = new UserData(request.username(), request.password(), request.email());
             AuthData auth = service.register(user);
+            RegisterResult result = new RegisterResult(auth.username(), auth.authToken());
 
-            res.status(200);
-            return gson.toJson(new RegisterResult(auth.username(), auth.authToken()));
+            return JsonResponse.success(res, 200, result);
         } catch (DataAccessException e) {
-            String msg = e.getMessage();
-            String lower = msg.toLowerCase();
-
-            if (lower.contains("bad request")) {
-                res.status(400);
-            } else if (lower.contains("already taken")) {
-                res.status(403);
-            } else if (lower.contains("internal server error")) {
-                res.status(500);
-            } else {
-                res.status(500);
-            }
-
-            if (!msg.toLowerCase().startsWith("error")) {
-                msg = "Error: " + msg;
-            }
-
-            return gson.toJson(Map.of("message", msg));
+            return JsonResponse.error(res, e.getMessage());
         } catch (Exception e) {
-            res.status(500);
-            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
+            return JsonResponse.exception(res, e);
         }
     }
+
 }
