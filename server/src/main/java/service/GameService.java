@@ -94,10 +94,10 @@ public class GameService {
 
         // Check if spot already taken
         if (color != null && color.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
-            throw new DataAccessException("Error: already taken");
+            throw new DataAccessException("Error: forbidden");
         }
         if (color != null && color.equalsIgnoreCase("BLACK") && game.blackUsername() != null) {
-            throw new DataAccessException("Error: already taken");
+            throw new DataAccessException("Error: forbidden");
         }
 
         // Update the game with the new player added to the right side
