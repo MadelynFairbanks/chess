@@ -26,7 +26,7 @@ public class Server {
 
         try {
             DatabaseManager.createDatabase();
-            DatabaseManager.createTables(); // ✅ Ensure tables exist before any endpoint runs
+            DatabaseManager.createTables(); // Ensuring tables exist before any endpoint runs
         } catch (DataAccessException ex) {
             ex.printStackTrace();
         }
@@ -67,9 +67,6 @@ public class Server {
         });
 
 
-
-
-        //This line initializes the server and can be removed once you have a functioning endpoint
         Spark.init();
 
         Spark.awaitInitialization();

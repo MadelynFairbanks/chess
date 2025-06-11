@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class PreloginRepl {
     private final Scanner scanner = new Scanner(System.in);
-    private final ServerFacade facade = new ServerFacade(8080); // You can modify the port as needed
+    private final ServerFacade facade = new ServerFacade(8080);
 
     public void run() {
         System.out.println("Type 'help' to see available commands.");

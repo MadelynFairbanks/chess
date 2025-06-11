@@ -16,8 +16,13 @@ import java.util.*;
 @WebSocket
 public class GameWebSocketHandler {
 
+    // Keeps track of which session is linked to which user
     private final Map<Session, String> sessionToUsername = new HashMap<>();
+
+    // Lets us find a user's session if we know their username
     private final Map<String, Session> usernameToSession = new HashMap<>();
+
+    // Tracks which users are currently in each game
     private final Map<Integer, Set<String>> gameToUsers = new HashMap<>();
 
     private final Gson gson = new Gson();
@@ -25,11 +30,13 @@ public class GameWebSocketHandler {
     private final MySqlAuthDAO authDAO = new MySqlAuthDAO();
     private final MySqlGameDAO gameDAO = new MySqlGameDAO();
 
+    // When a client connects to the socket ...
     @OnWebSocketConnect
     public void onConnect(Session session) {
         // No-op for now
     }
 
+    // When a client disconnects, clean up their session
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
         String username = sessionToUsername.remove(session);
@@ -38,6 +45,7 @@ public class GameWebSocketHandler {
         }
     }
 
+    // Incoming message handler — figures out what kind of command it is and routes it
     @OnWebSocketMessage
     public void onMessage(Session session, String messageJson) {
         try {
@@ -55,6 +63,7 @@ public class GameWebSocketHandler {
 
     // ========== HANDLER METHODS ==========
 
+    // User joins a game through WebSocket
     private void handleConnect(Session session, ConnectCommand cmd) {
         try {
             AuthData auth = authDAO.findAuth(cmd.getAuthToken());
@@ -78,6 +87,7 @@ public class GameWebSocketHandler {
         }
     }
 
+    // Handles a move being made in a game
     private void handleMakeMove(Session session, MakeMoveCommand cmd) {
         try {
             AuthData auth = authDAO.findAuth(cmd.getAuthToken());
@@ -96,7 +106,7 @@ public class GameWebSocketHandler {
             ChessGame game = gameData.game();
             var move = cmd.getMove();
 
-            // Validate turn
+            // Determining if it's the user's turn based on color
             ChessGame.TeamColor playerColor = gameData.whiteUsername().equals(auth.username())
                     ? ChessGame.TeamColor.WHITE
                     : gameData.blackUsername().equals(auth.username())
@@ -108,12 +118,15 @@ public class GameWebSocketHandler {
                 return;
             }
 
+            // Check if the move is valid before making it
             if (!game.validMoves(move.getStartPosition()).contains(move)) {
                 send(session, new ErrorMessage("Error: Invalid move"));
                 return;
             }
 
             game.makeMove(move);
+
+            // Update the game in the DB with the new state
             gameDAO.updateGame(new GameData(
                     gameData.gameID(),
                     gameData.whiteUsername(),
@@ -123,11 +136,12 @@ public class GameWebSocketHandler {
                     false // Game is not over yet
             ));
 
-
+            // Let everyone know the new state + announce the move
             broadcastAll(cmd.getGameID(), new LoadGameMessage(game));
             broadcastExcept(cmd.getGameID(), auth.username(),
                     new NotificationMessage(auth.username() + " moved from " + move.getStartPosition() + " to " + move.getEndPosition()));
 
+            // Check for check or checkmate after the move
             if (game.isInCheckmate(game.getTeamTurn())) {
                 broadcastAll(cmd.getGameID(), new NotificationMessage(game.getTeamTurn() + " is in checkmate!"));
             } else if (game.isInCheck(game.getTeamTurn())) {
@@ -139,6 +153,8 @@ public class GameWebSocketHandler {
         }
     }
 
+
+    // Handles when a user leaves a game (drops their color if needed)
     private void handleLeave(Session session, LeaveCommand cmd) {
         try {
             String username = sessionToUsername.remove(session);
@@ -164,6 +180,7 @@ public class GameWebSocketHandler {
     }
 
 
+    // Handles resigning from a game
     private void handleResign(Session session, ResignCommand cmd) {
         try {
             AuthData auth = authDAO.findAuth(cmd.getAuthToken());
@@ -189,6 +206,7 @@ public class GameWebSocketHandler {
                 return;
             }
 
+            // Mark game as over and save it
             gameDAO.updateGame(new GameData(
                     gameData.gameID(),
                     gameData.whiteUsername(),
@@ -207,12 +225,14 @@ public class GameWebSocketHandler {
 
     // ========== HELPER METHODS ==========
 
+    // Sends a message to a single user
     private void send(Session session, ServerMessage message) {
         try {
             session.getRemote().sendString(gson.toJson(message));
         } catch (Exception ignored) {}
     }
 
+    // Sends a message to every user in a game
     private void broadcastAll(int gameID, ServerMessage message) {
         gameToUsers.getOrDefault(gameID, Set.of()).forEach(username -> {
             Session session = usernameToSession.get(username);
@@ -222,6 +242,7 @@ public class GameWebSocketHandler {
         });
     }
 
+    // Sends a message to everyone *except* the specified user
     private void broadcastExcept(int gameID, String excludedUsername, ServerMessage message) {
         gameToUsers.getOrDefault(gameID, Set.of()).forEach(username -> {
             if (!username.equals(excludedUsername)) {

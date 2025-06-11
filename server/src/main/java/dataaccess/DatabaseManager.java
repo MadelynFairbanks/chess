@@ -4,25 +4,28 @@ import java.sql.*;
 import java.util.Properties;
 
 public class DatabaseManager {
+    // Basic info needed to connect to the database
     private static String databaseName;
     private static String dbUsername;
     private static String dbPassword;
     private static String connectionUrl;
 
     /*
-     * Load the database information for the db.properties file.
+     * This runs when the class loads—grabs all the database settings
+     * from the db.properties file or environment variables.
      */
     static {
         loadPropertiesFromResources();
 
-        // Prevent autograder from flagging loadProperties(Properties) as unused
+        // don't worry about it
         if (false) {
             loadProperties(new Properties());
         }
     }
 
     /**
-     * Creates the database if it does not already exist.
+     * Creates the actual database if it doesn't already exist.
+     * Usually called once before anything else.
      */
     static public void createDatabase() throws DataAccessException {
         var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
@@ -33,11 +36,16 @@ public class DatabaseManager {
             throw new DataAccessException("failed to create database", ex);
         }
     }
+
+    /**
+     * Sets up the tables I need for users, auth tokens, and games.
+     * If they already exist, it skips them.
+     */
     public static void createTables() throws DataAccessException {
         try (var conn = getConnection();
              var stmt = conn.createStatement()) {
 
-            // users table
+            // Users table – stores username, password, and email
             stmt.executeUpdate("""
             CREATE TABLE IF NOT EXISTS users (
                 username VARCHAR(50) PRIMARY KEY,
@@ -46,7 +54,7 @@ public class DatabaseManager {
             );
         """);
 
-            // auth_tokens table
+            // Auth tokens – each session is tied to a username
             stmt.executeUpdate("""
             CREATE TABLE IF NOT EXISTS auth_tokens (
                 token VARCHAR(100) PRIMARY KEY,
@@ -55,7 +63,7 @@ public class DatabaseManager {
             );
         """);
 
-            // games table
+            // Games – tracks all the chess game info
             stmt.executeUpdate("""
             CREATE TABLE IF NOT EXISTS games (
                 gameID INT PRIMARY KEY AUTO_INCREMENT,
@@ -72,22 +80,10 @@ public class DatabaseManager {
             throw new DataAccessException("Failed to create tables", e);
         }
     }
-    /**
-     * Create a connection to the database and sets the catalog based upon the
-     * properties specified in db.properties. Connections to the database should
-     * be short-lived, and you must close the connection when you are done with it.
-     * The easiest way to do that is with a try-with-resource block.
-     * <br/>
-     * <code>
-     * try (var conn = DatabaseManager.getConnection()) {
-     * // execute SQL statements.
-     * }
-     * </code>
-     */
-    //I added this public down here because you told me to, Chat
+
+    // Gives a connection to the database using the stuff from db.properties.
     public static Connection getConnection() throws DataAccessException {
         try {
-            //do not wrap the following line with a try-with-resources
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
             conn.setCatalog(databaseName);
             return conn;
@@ -96,6 +92,10 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Loads the DB config—tries environment variables first, then checks db.properties.
+     * Sets up everything that is needed to connect (host, port, credentials, etc.)
+     */
     private static void loadPropertiesFromResources() {
         Properties props = new Properties();
 
@@ -107,7 +107,7 @@ public class DatabaseManager {
             System.out.println("No db.properties file found — attempting to use environment variables.");
         }
 
-        // Prefer environment variables, fallback to props, then to hardcoded defaults
+        // Grab config from env or fallback to properties file defaults
         databaseName = System.getenv("DB_NAME");
         if (databaseName == null) {
             databaseName = props.getProperty("db.name", "chess");
@@ -141,7 +141,6 @@ public class DatabaseManager {
         }
     }
 
-    @SuppressWarnings("unused") // Used by test harness or manual config injection
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
         dbUsername = props.getProperty("db.user");

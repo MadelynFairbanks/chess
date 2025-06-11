@@ -36,7 +36,6 @@ public class LogoutHandler implements Route {
                 res.status(500);
             }
 
-            // Ensure message starts with "Error: "
             if (!msg.toLowerCase().startsWith("error")) {
                 msg = "Error: " + msg;
             }
