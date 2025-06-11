@@ -216,7 +216,9 @@ public class GameWebSocketHandler {
     private void broadcastAll(int gameID, ServerMessage message) {
         gameToUsers.getOrDefault(gameID, Set.of()).forEach(username -> {
             Session session = usernameToSession.get(username);
-            if (session != null && session.isOpen()) send(session, message);
+            if (session != null && session.isOpen()) {
+                send(session, message);
+            }
         });
     }
 
@@ -224,7 +226,9 @@ public class GameWebSocketHandler {
         gameToUsers.getOrDefault(gameID, Set.of()).forEach(username -> {
             if (!username.equals(excludedUsername)) {
                 Session session = usernameToSession.get(username);
-                if (session != null && session.isOpen()) send(session, message);
+                if (session != null && session.isOpen()) {
+                    send(session, message);
+                }
             }
         });
     }

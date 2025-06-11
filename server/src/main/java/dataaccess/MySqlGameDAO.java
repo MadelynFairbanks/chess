@@ -10,6 +10,23 @@ import java.util.List;
 
 public class MySqlGameDAO {
 
+    private void setUsernameField(int gameID, String username, String columnName) throws DataAccessException {
+        String sql = "UPDATE games SET " + columnName + " = ? WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+            if (username == null) {
+                stmt.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(1, username);
+            }
+            stmt.setInt(2, gameID);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to set " + columnName, e);
+        }
+    }
+
+
     public int insertGame(GameData game) throws DataAccessException {
         String sql = "INSERT INTO games (whiteUsername, blackUsername, gameName, game, gameOver) VALUES (?, ?, ?, ?, ?)";
 
@@ -113,35 +130,12 @@ public class MySqlGameDAO {
     }
 
     public void setWhiteUsername(int gameID, String username) throws DataAccessException {
-        String sql = "UPDATE games SET whiteUsername = ? WHERE gameID = ?";
-        try (var conn = DatabaseManager.getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-            if (username == null) {
-                stmt.setNull(1, java.sql.Types.VARCHAR);
-            } else {
-                stmt.setString(1, username);
-            }
-            stmt.setInt(2, gameID);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to set whiteUsername", e);
-        }
+        setUsernameField(gameID, username, "whiteUsername");
     }
 
     public void setBlackUsername(int gameID, String username) throws DataAccessException {
-        String sql = "UPDATE games SET blackUsername = ? WHERE gameID = ?";
-        try (var conn = DatabaseManager.getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-            if (username == null) {
-                stmt.setNull(1, java.sql.Types.VARCHAR);
-            } else {
-                stmt.setString(1, username);
-            }
-            stmt.setInt(2, gameID);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to set blackUsername", e);
-        }
+        setUsernameField(gameID, username, "blackUsername");
     }
+
 
 }
