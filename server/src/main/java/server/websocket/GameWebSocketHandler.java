@@ -88,6 +88,11 @@ public class GameWebSocketHandler {
                 return;
             }
 
+            if (gameData.gameOver()) {
+                send(session, new ErrorMessage("Error: Game is already over"));
+                return;
+            }
+
             ChessGame game = gameData.game();
             var move = cmd.getMove();
 
@@ -153,11 +158,25 @@ public class GameWebSocketHandler {
             AuthData auth = authDAO.findAuth(cmd.getAuthToken());
             GameData gameData = gameDAO.findGame(cmd.getGameID());
 
+
             if (auth == null || gameData == null) {
                 send(session, new ErrorMessage("Error: Invalid auth or game ID"));
                 return;
             }
+
+            if (gameData.gameOver()) {
+                send(session, new ErrorMessage("Error: Game is already over"));
+                return;
+            }
+
             ChessGame game = gameData.game();
+            String username = auth.username();
+
+            // Reject if observer tries to resign
+            if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+                send(session, new ErrorMessage("Error: Observers can't resign the game"));
+                return;
+            }
 
             gameDAO.updateGame(new GameData(
                     gameData.gameID(),
@@ -165,7 +184,7 @@ public class GameWebSocketHandler {
                     gameData.blackUsername(),
                     gameData.gameName(),
                     game,
-                    true // Game is not over yet
+                    true // Game is over now
             ));
 
 
