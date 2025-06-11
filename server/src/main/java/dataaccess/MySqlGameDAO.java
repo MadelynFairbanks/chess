@@ -39,7 +39,14 @@ public class MySqlGameDAO {
             stmt.setString(3, game.gameName());
 
             // TEMP: store empty JSON instead of full game state
-            stmt.setString(4, "{}");
+            String gameJson = game.game() == null
+                    ? new Gson().toJson(new ChessGame()) // default to empty game
+                    : new Gson().toJson(game.game());
+            stmt.setString(4, gameJson);
+
+            System.out.println("Inserting game: " + game.gameName());
+            System.out.println("Serialized game: " + gameJson);
+
 
             stmt.setBoolean(5, game.gameOver());
 
