@@ -19,8 +19,7 @@ public class AuthDAOTest {
     @BeforeEach
     public void setup() throws DataAccessException {
         // Create database and tables
-        DatabaseManager.createDatabase();
-        DatabaseManager.createTables();
+        DatabaseManager.configureDatabase();
 
         // Clear tables in correct order (auth_tokens depends on users)
         try (Connection conn = DatabaseManager.getConnection();

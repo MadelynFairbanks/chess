@@ -5,8 +5,7 @@ import dataaccess.DataAccessException;
 public class Main {
     public static void main(String[] args) {
         try {
-            DatabaseManager.createDatabase();
-            DatabaseManager.createTables();
+            DatabaseManager.configureDatabase();
             System.out.println("Database created or already exists.");
         } catch (DataAccessException e) {
             System.out.println("Failed to create database:");

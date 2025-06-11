@@ -11,8 +11,7 @@ public class UserDAOTest {
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        DatabaseManager.createDatabase();
-        DatabaseManager.createTables();
+        DatabaseManager.configureDatabase();
         userDAO = new MySqlUserDAO();
     }
 

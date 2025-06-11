@@ -16,8 +16,7 @@ public class GameDAOTest {
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        DatabaseManager.createDatabase();
-        DatabaseManager.createTables();
+        DatabaseManager.configureDatabase();
 
         dataAccess = new MySqlDataAccess();
         gameDAO = new MySqlGameDAO();
