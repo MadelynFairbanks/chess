@@ -3,6 +3,7 @@ package server;
 import chess.ChessGame;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
+import dataaccess.DataAccessException;
 import dataaccess.MySqlDataAccess;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
@@ -49,22 +50,40 @@ public class WebSocketHandler {
     }
 
     private void handleConnect(Session session, ConnectCommand command) {
-        GAMESESSIONS.putIfAbsent(command.getGameID(), new ConcurrentHashMap<>());
-        GAMESESSIONS.get(command.getGameID()).put(session, command.getAuthToken());
-
         try {
+            var auth = dataAccess.getAuth(command.getAuthToken());
+            if (auth == null) {
+                sendError(session, "Invalid auth token.");
+                session.close();  // ✅ cleanly close session if auth is bad
+                return;
+            }
+
+            GAMESESSIONS.putIfAbsent(command.getGameID(), new ConcurrentHashMap<>());
+            GAMESESSIONS.get(command.getGameID()).put(session, command.getAuthToken());
+
             GameData gameData = dataAccess.getGame(command.getGameID());
             ChessGame game = gameData.game();
             ServerMessage loadGame = new LoadGameMessage(game);
             send(session, loadGame);
 
-            String role = (command.getPlayerColor() != null) ? command.getPlayerColor().toString().toLowerCase() : "observer";
-            String notification = String.format("%s connected as %s", getUsername(command.getAuthToken()), role);
+            String role = (command.getPlayerColor() != null)
+                    ? command.getPlayerColor().toString().toLowerCase()
+                    : "observer";
+            String notification = String.format("%s connected as %s", auth.username(), role);
             broadcastToOthers(command.getGameID(), session, new NotificationMessage(notification));
-        } catch (Exception e) {
-            sendError(session, "Error loading game: " + e.getMessage());
+
+        } catch (DataAccessException e) {
+            sendError(session, "Error validating auth or loading game: " + e.getMessage());
+            try {
+                session.close(); // best effort
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
+
+
+
 
     private void handleMove(Session session, MakeMoveCommand command) {
         int gameID = command.getGameID();
@@ -129,9 +148,11 @@ public class WebSocketHandler {
 
     private String getUsername(String authToken) {
         try {
-            return dataAccess.getUserByAuthToken(authToken).username();
+            return dataAccess.getAuth(authToken).username(); // ✅ simpler and consistent with the rest of your code
         } catch (Exception e) {
+            System.out.println("❌ getAuth failed: " + e.getMessage());
             return "Unknown";
         }
     }
+
 }
