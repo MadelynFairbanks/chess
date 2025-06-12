@@ -175,7 +175,9 @@ public class ChessGame {
     }
 
     public boolean isGameOver() {
-        if (gameOver) return true;
+        if (gameOver) {
+            return true;
+        }
         return isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK) || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK);
     }
 
@@ -190,7 +192,9 @@ public class ChessGame {
 
     /** If someone resigns, mark the game over and set the winner. */
     public void resign(TeamColor resigningPlayer) {
-        if (gameOver) return;            // already done
+        if (gameOver) {
+            return;            // already done
+        }
         this.gameOver = true;
         this.winner   = resigningPlayer.opponent();
     }
