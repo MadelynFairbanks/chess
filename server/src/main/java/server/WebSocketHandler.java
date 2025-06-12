@@ -19,7 +19,11 @@ public class WebSocketHandler {
 
     private static final ConcurrentHashMap<Integer, ConcurrentHashMap<Session, String>> GAMESESSIONS = new ConcurrentHashMap<>();
     private static final Gson GSON = new Gson();
-    private final DataAccess dataAccess = new MySqlDataAccess();
+    private static DataAccess dataAccess;
+
+    public static void setDataAccess(DataAccess da) {
+        dataAccess = da;
+    }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
@@ -95,13 +99,8 @@ public class WebSocketHandler {
                 return;
             }
 
-            var user = dataAccess.getUser(auth.username());
-            if (user == null) {
-                sendError(session, "Invalid move: Error fetching user from auth token.");
-                return;
-            }
-
-            dataAccess.makeMove(command); // ✅ Apply move if auth is valid
+            // auth is enough—drop the extra getUser(...) check
+            dataAccess.makeMove(command);
 
             GameData updated = dataAccess.getGame(gameID);
             broadcast(gameID, new LoadGameMessage(updated.game()));
@@ -146,14 +145,16 @@ public class WebSocketHandler {
             } else if (auth.username().equals(gameData.blackUsername())) {
                 playerColor = ChessGame.TeamColor.BLACK;
             }
-
             if (playerColor == null) {
                 sendError(session, "Resign failed: observers cannot resign.");
                 return;
             }
 
-            // Mark the game as over — update DAO if needed
-            dataAccess.updateGame(gameData); // Only needed if the DAO persists this field
+            // ← make the in-memory ChessGame mark itself over
+            gameData.game().resign(playerColor);
+
+            // now persist that updated state
+            dataAccess.updateGame(gameData);
 
             String player = auth.username();
             broadcast(command.getGameID(), new NotificationMessage(player + " resigned. Game over."));
@@ -162,6 +163,7 @@ public class WebSocketHandler {
             sendError(session, "Resign failed: " + e.getMessage());
         }
     }
+
 
 
     private void send(Session session, ServerMessage message) {

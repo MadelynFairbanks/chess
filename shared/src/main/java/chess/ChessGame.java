@@ -8,6 +8,9 @@ public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
 
+    private boolean gameOver = false;
+    private TeamColor winner = null;
+
     private ChessPosition findKingPosition(TeamColor color, ChessBoard board) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
@@ -94,7 +97,10 @@ public class ChessGame {
 
     public enum TeamColor {
         WHITE,
-        BLACK
+        BLACK;
+        public TeamColor opponent() {
+            return this == WHITE ? BLACK : WHITE;
+        }
     }
 
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
@@ -169,8 +175,8 @@ public class ChessGame {
     }
 
     public boolean isGameOver() {
-        return isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK)
-                || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK);
+        if (gameOver) return true;
+        return isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK) || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK);
     }
 
 
@@ -181,6 +187,19 @@ public class ChessGame {
     public ChessBoard getBoard() {
         return board;
     }
+
+    /** If someone resigns, mark the game over and set the winner. */
+    public void resign(TeamColor resigningPlayer) {
+        if (gameOver) return;            // already done
+        this.gameOver = true;
+        this.winner   = resigningPlayer.opponent();
+    }
+
+    /** Who ultimately won (null if not over yet) */
+    public TeamColor getWinner() {
+        return winner;
+    }
+
 
     @Override
     public boolean equals(Object o) {

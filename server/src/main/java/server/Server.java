@@ -18,6 +18,9 @@ public class Server {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
 
+        MySqlDataAccess mySqlData = new MySqlDataAccess();
+        WebSocketHandler.setDataAccess(mySqlData);
+
         Spark.webSocket("/ws", WebSocketHandler.class);
 
         try {
@@ -26,8 +29,6 @@ public class Server {
         } catch (DataAccessException ex) {
             ex.printStackTrace();
         }
-
-        MySqlDataAccess mySqlData = new MySqlDataAccess();
 
 
         // Register your endpoints and handle exceptions here.
