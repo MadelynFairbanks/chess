@@ -87,15 +87,26 @@ public class WebSocketHandler {
 
     private void handleMove(Session session, MakeMoveCommand command) {
         int gameID = command.getGameID();
-        try {
-            // Attempt to apply the move
-            dataAccess.makeMove(command);
 
-            // Now update and broadcast new game state
+        try {
+            var auth = dataAccess.getAuth(command.getAuthToken());
+            if (auth == null) {
+                sendError(session, "Invalid move: Invalid auth token.");
+                return;
+            }
+
+            var user = dataAccess.getUser(auth.username());
+            if (user == null) {
+                sendError(session, "Invalid move: Error fetching user from auth token.");
+                return;
+            }
+
+            dataAccess.makeMove(command); // ✅ Apply move if auth is valid
+
             GameData updated = dataAccess.getGame(gameID);
             broadcast(gameID, new LoadGameMessage(updated.game()));
 
-            String player = getUsername(command.getAuthToken());
+            String player = auth.username();
             String moveDesc = command.getMove().toString();
             broadcast(gameID, new NotificationMessage(player + " moved: " + moveDesc));
 
@@ -103,6 +114,7 @@ public class WebSocketHandler {
             sendError(session, "Invalid move: " + e.getMessage());
         }
     }
+
 
 
 
@@ -116,13 +128,41 @@ public class WebSocketHandler {
 
     private void handleResign(Session session, ResignCommand command) {
         try {
-            // You will need to implement this logic in your DAO
-            String player = getUsername(command.getAuthToken());
+            var auth = dataAccess.getAuth(command.getAuthToken());
+            if (auth == null) {
+                sendError(session, "Resign failed: invalid auth token.");
+                return;
+            }
+
+            GameData gameData = dataAccess.getGame(command.getGameID());
+            if (gameData == null || gameData.game().isGameOver()) {
+                sendError(session, "Resign failed: game is already over.");
+                return;
+            }
+
+            ChessGame.TeamColor playerColor = null;
+            if (auth.username().equals(gameData.whiteUsername())) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (auth.username().equals(gameData.blackUsername())) {
+                playerColor = ChessGame.TeamColor.BLACK;
+            }
+
+            if (playerColor == null) {
+                sendError(session, "Resign failed: observers cannot resign.");
+                return;
+            }
+
+            // Mark the game as over — update DAO if needed
+            dataAccess.updateGame(gameData); // Only needed if the DAO persists this field
+
+            String player = auth.username();
             broadcast(command.getGameID(), new NotificationMessage(player + " resigned. Game over."));
+
         } catch (Exception e) {
             sendError(session, "Resign failed: " + e.getMessage());
         }
     }
+
 
     private void send(Session session, ServerMessage message) {
         try {

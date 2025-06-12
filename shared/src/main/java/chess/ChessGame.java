@@ -167,9 +167,10 @@ public class ChessGame {
         }
         return checking(teamColor);
     }
+
     public boolean isGameOver() {
-        // Optional: improve later with checkmate/stalemate logic
-        return false;
+        return isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK)
+                || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK);
     }
 
 
