@@ -10,5 +10,9 @@
         <module name="shared" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="3" target="21" />
+      <module name="client" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -8,90 +8,99 @@ import ui.websocket.WebSocketFacade;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class GamePlayClient {
-    private String serverUrl;
-    private final NotificationHandler notificationHandler;
-    private WebSocketFacade ws;
 
+    private String serverUrl;  // 🛰️ where our server lives
+    private final NotificationHandler notificationHandler;  // 🔔 for spicy game updates
+    private WebSocketFacade webSocket;  // 🌐 our lil portal to the chess multiverse
 
-    public  GamePlayClient(String serverUrl, NotificationHandler notificationHandler) {
+    // 🚪 constructor — setting up the vibes
+    public GamePlayClient(String serverUrl, NotificationHandler notificationHandler) {
         this.serverUrl = serverUrl;
         this.notificationHandler = notificationHandler;
-
     }
 
+    // 🎮 command interpreter: this is where the magic begins
     public String eval(String input, String authToken) {
         try {
-            var tokens = input.toLowerCase().split(" ");
+            var tokens = input.toLowerCase().split(" ");  // 📦 break it down
             var cmd = (tokens.length > 0) ? tokens[0] : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
+
+            // 🔁 match the command with the correct action
             return switch (cmd) {
-                case "m", "move", "make" -> makeMove(authToken, params);
-                case "r", "redraw" -> redrawBoard(authToken);
-                case "resign" -> resign(authToken);
-                case "leave" -> leave(authToken);
-                case "hl", "highlight" -> highlight(authToken, params);
-                    case "quit", "q" -> "quit";
-                default -> help();
+                case "m", "move", "make"     -> makeMove(authToken, params);            // ♟️ move that pawn, queen
+                case "r", "redraw"           -> redrawBoard(authToken);                 // 🎨 refresh the masterpiece
+                case "resign"                -> resign(authToken);                      // 🚩 wave the white flag
+                case "leave"                 -> leave(authToken);                       // 🏃 dip out of the game
+                case "hl", "highlight"       -> highlight(authToken, params);           // ✨ where can I go tho?
+                case "quit", "q"             -> "quit";                                 // ❌ bounce from the app
+                default                      -> help();                                 // 📜 when in doubt, read the manual
             };
+
         } catch (Exception ex) {
-            return ex.getMessage();
+            return ex.getMessage();  // 💥 if it breaks, tell me why
         }
     }
 
+    // 🎉 connect to the game and start playin’
     public void joinGame(String authToken, GameID gameID) throws ResponseException {
-        ws = new WebSocketFacade(serverUrl, notificationHandler, gameID);
-        ws.joinGame(authToken, gameID);
+        webSocket = new WebSocketFacade(serverUrl, notificationHandler, gameID);
+        webSocket.joinGame(authToken, gameID);  // 📞 ring ring! let me in!
     }
 
+    // ♟️ attempt to move a piece... or crash trying
     public String makeMove(String authToken, String... params) throws ResponseException, IOException {
-        if (params.length != 2) {
-            if(params.length != 3){
-                System.out.println("Invalid move, Please Try Again");
-                return "help";
-            }
+        if (params.length < 2 || params.length > 3) {
+            System.out.println("🤨 Invalid move. Try again (source destination [promotion])");
+            return "help";
         }
-
-        return ws.makeMove(authToken, params);
+        return webSocket.makeMove(authToken, params);
     }
 
-    public String redrawBoard(String authToken){
-        ws.redrawBoard(authToken);
+    // 🖼️ redraw the board like it's a Bob Ross painting
+    public String redrawBoard(String authToken) {
+        webSocket.redrawBoard(authToken);
         return "";
     }
 
+    // 😭 if you’re donezo, time to resign
     public String resign(String authToken) throws ResponseException {
-        System.out.println("Are you sure you want to resign? Y/N: ");
-        String input = new java.util.Scanner(System.in).nextLine();
-        var tokens = input.toLowerCase().split(" ");
-        var cmd = (tokens.length > 0) ? tokens[0] : "help";
-        if (cmd.equals("y")||cmd.equals("yes")) {
-            ws.resign(authToken);
+        System.out.print("Are you sure you want to resign? Y/N: ");
+        String input = new Scanner(System.in).nextLine().toLowerCase();
+        var response = input.split(" ")[0];
+
+        if (response.equals("y") || response.equals("yes")) {
+            webSocket.resign(authToken);  // 🫡 respect, soldier
         }
+
         return "";
     }
 
+    // 🏃 leave the game like a ghost — poof
     public String leave(String authToken) throws ResponseException {
-        ws.leave(authToken);
+        webSocket.leave(authToken);
         return "quit";
     }
 
+    // ✨ get those little blue highlights showing where you can flex
     public String highlight(String authToken, String... params) {
-        ws.highlight(authToken, params[0]);
+        if (params.length == 0) return "Missing position to highlight 😬";
+        webSocket.highlight(authToken, params[0]);
         return "";
     }
 
-
-        public String help(){
-        return   """
-                Options:
-                        Highlight legal moves: "hl", "highlight"  ‹position> (e.g. f5)
-                        Make a move: "m", "move", "make"    ‹source> ‹destination› ‹optional promotion› (e.g. f5 e4 q)
-                        Redraw Chess Board: "r", "redraw"
-                        Resign from game: "resign"
-                        Leave game: "leave"
-                """;
-
+    // 📜 your cheat sheet for surviving chess life
+    public String help() {
+        return """
+               Options:
+                   Highlight legal moves: "hl", "highlight"  <position> (e.g. f5)
+                   Make a move: "m", "move", "make"           <source> <destination> [promotion] (e.g. f5 e4 q)
+                   Redraw the chess board: "r", "redraw"
+                   Resign from the game: "resign"
+                   Leave the game: "leave"
+               """;
     }
 }
