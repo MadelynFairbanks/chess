@@ -95,7 +95,9 @@ public class WebSocketFacade extends Endpoint {
     public String makeMove(String authToken, String... params) throws ResponseException {
         try {
             ChessMove move = buildMoveFromParams(params);
-            if (move == null) return "Invalid move parameters 😬";
+            if (move == null) {
+                return "Invalid move parameters 😬";
+            }
 
             MakeMoveCommand moveCommand = new MakeMoveCommand(authToken, gameID.gameID(), move);
             this.session.getBasicRemote().sendText(new Gson().toJson(moveCommand));
@@ -107,17 +109,23 @@ public class WebSocketFacade extends Endpoint {
     }
 
     private ChessMove buildMoveFromParams(String[] params) {
-        if (params.length != 2 && params.length != 3) return null;
+        if (params.length != 2 && params.length != 3) {
+            return null;
+        }
 
         int[] start = parsePosition(params[0]);
         int[] end = parsePosition(params[1]);
 
-        if (!isValidPosition(start) || !isValidPosition(end)) return null;
+        if (!isValidPosition(start) || !isValidPosition(end)) {
+            return null;
+        }
 
         ChessPiece.PieceType promo = null;
         if (params.length == 3) {
             promo = parsePromotion(params[2]);
-            if (promo == null) return null;
+            if (promo == null) {
+                return null;
+            }
         }
 
         return new ChessMove(
