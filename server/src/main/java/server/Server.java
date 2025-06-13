@@ -1,179 +1,177 @@
 package server;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import dataaccess.DataAccessException;
-import dataaccess.DataAccessInterface;
-import dataaccess.MemoryDataAccessMethods;
-import dataaccess.MySQLDataAccessMethods;
-import model.GameData;
-import model.JoinGame;
+import com.google.gson.*;
+import dataaccess.*;
+import model.*;
 import service.ChessService;
 import spark.*;
 import websocket.WebSocketHandler;
 
 import java.util.Map;
 
+/**
+ * 🧠 Central server setup.
+ * This is the control tower, baby.
+ */
 public class Server {
+
     DataAccessInterface dataAccess;
     {
         try {
-            dataAccess = new MySQLDataAccessMethods();
+            dataAccess = new MySQLDataAccessMethods(); // 🎯 Default: go full SQL mode
         } catch (DataAccessException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e); // 🚨 If the DB dies, so does the server
         }
     }
-    ChessService service = new ChessService(dataAccess);
 
+    ChessService service = new ChessService(dataAccess); // 🧙 Service that does the magic
+
+    /**
+     * 🚀 Spin up the server on the desired port.
+     */
     public int run(int desiredPort) {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
-        Spark.webSocket("/ws", WebSocketHandler.class);
+        Spark.webSocket("/ws", WebSocketHandler.class); // 🎤 Real-time gameplay vibes
 
+        // 🔗 REST endpoints
+        Spark.delete("/db", this::clearApplication);              // 🔥 Nukes the DB
+        Spark.post("/user", this::registerUser);                  // 👤 Signup
+        Spark.post("/session", this::logIn);                      // 🔓 Login
+        Spark.delete("/session", this::logOut);                   // 🔒 Logout
+        Spark.post("/game", this::createGame);                    // 🎮 Create game
+        Spark.get("/game", this::listGames);                      // 📜 List games
+        Spark.put("/game", this::joinGame);                       // 🤝 Join game
+        Spark.post("/gameplay", this::updateGame);                // 🔁 Update game
+        Spark.post("/gameRet", this::getGame);                    // 🕵️‍♀️ Get game
 
-        // Register your endpoints and handle exceptions here.
-        String stringVarToSatisfyQualityCode = "/game";
-        Spark.post("/user", this::registerUser);
-        Spark.delete("/db", this::clearApplication);
-        Spark.post("/session", this::logIn);
-        Spark.delete("/session", this::logOut);
-        Spark.get(stringVarToSatisfyQualityCode, this::listGames);
-        Spark.put(stringVarToSatisfyQualityCode, this::joinGame);
-        Spark.post(stringVarToSatisfyQualityCode, this::createGame);
-
-        Spark.post("/gameplay", this::updateGame);
-        Spark.post("/gameRet", this::getGame);
-        //This line initializes the server and can be removed once you have a functioning endpoint 
-        Spark.init();
-
+        Spark.init();              // 🏁 Start your engines
         Spark.awaitInitialization();
+
         return Spark.port();
     }
 
+    // --------------------------------
+    // 🔧 UTILITIES
+    // --------------------------------
 
-
-
-    private Object returnErrorHelper (Response response, DataAccessException e ){
+    /**
+     * 🆘 Sends error messages in JSON with the right HTTP status.
+     */
+    private Object returnErrorHelper(Response res, DataAccessException e) {
         int status = e.getStatus();
-        if (status < 100 || status > 599) {
-            status = 500;
-        }
-        response.status(status);
-        return new Gson().toJson(Map.of("message", "Error: "+ e.getMessage(), "status", e.getStatus()));
+        if (status < 100 || status > 599) status = 500;
+        res.status(status);
+        return new Gson().toJson(Map.of(
+                "message", "Error: " + e.getMessage(),
+                "status", status
+        ));
     }
 
-    // Handlers
-    private Object clearApplication(Request request, Response response) throws DataAccessException {
+    // --------------------------------
+    // 🔨 ENDPOINT HANDLERS
+    // --------------------------------
+
+    private Object clearApplication(Request req, Response res) {
         try {
-            return service.clear();
-        } catch (DataAccessException e ){
-            return returnErrorHelper(response,e);
+            return service.clear(); // 💣 All gone
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-
-
-    private Object registerUser(Request request, Response response) {
-        Gson serializer = new Gson();
-        var registerRequest = serializer.fromJson(request.body(), model.UserData.class);
+    private Object registerUser(Request req, Response res) {
+        var body = new Gson().fromJson(req.body(), UserData.class);
         try {
-            var registerResult = service.register(registerRequest);
-            return serializer.toJson(registerResult);
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            var result = service.register(body);
+            return new Gson().toJson(result);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-
-
-    private Object logIn(Request request, Response response) {
-        Gson serializer = new Gson();
-        var logInRequest = serializer.fromJson(request.body(), model.UserData.class);
+    private Object logIn(Request req, Response res) {
+        var body = new Gson().fromJson(req.body(), UserData.class);
         try {
-            var logInResult = service.logIn(logInRequest);
-            return serializer.toJson(logInResult);
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            var result = service.logIn(body);
+            return new Gson().toJson(result);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-    String authStringVarToSatisfyQualityCode = "Authorization";
+    String authHeader = "Authorization"; // 🔐 Token highway
 
-    private Object logOut(Request request, Response response) {
-        String token = request.headers(authStringVarToSatisfyQualityCode);
+    private Object logOut(Request req, Response res) {
+        var token = req.headers(authHeader);
         try {
             service.logOut(token);
             return "";
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-    private Object listGames(Request request, Response response) {
-        Gson serializer = new Gson();
-        JsonObject jsonSerializer = new JsonObject();
-        String token = request.headers(authStringVarToSatisfyQualityCode);
+    private Object listGames(Request req, Response res) {
+        var token = req.headers(authHeader);
         try {
-            var listGamesResult = service.listGames(token);
-            JsonArray arrayOfGames = serializer.toJsonTree(listGamesResult).getAsJsonArray();
-            jsonSerializer.add("games", arrayOfGames);
-            return serializer.toJson(jsonSerializer);
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            var result = service.listGames(token);
+            var jsonArray = new Gson().toJsonTree(result).getAsJsonArray();
+            var wrapper = new JsonObject();
+            wrapper.add("games", jsonArray);
+            return new Gson().toJson(wrapper);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-    private Object joinGame(Request request, Response response) {
-        Gson serializer = new Gson();
-        String token = request.headers(authStringVarToSatisfyQualityCode);
-        JoinGame joinGameRequest = serializer.fromJson(request.body(), model.JoinGame.class);
+    private Object joinGame(Request req, Response res) {
+        var token = req.headers(authHeader);
+        var body = new Gson().fromJson(req.body(), JoinGame.class);
         try {
-            service.joinGame(token, joinGameRequest);
+            service.joinGame(token, body);
             return "";
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-
-    private Object createGame(Request request, Response response) {
-        Gson serializer = new Gson();
-        String token = request.headers(authStringVarToSatisfyQualityCode);
-        var createGameRequest = serializer.fromJson(request.body(), model.GameData.class);
+    private Object createGame(Request req, Response res) {
+        var token = req.headers(authHeader);
+        var body = new Gson().fromJson(req.body(), GameData.class);
         try {
-            int createGameResult = service.createGame(token, createGameRequest);
-            return serializer.toJson(Map.of("gameID", createGameResult));
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            int result = service.createGame(token, body);
+            return new Gson().toJson(Map.of("gameID", result));
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-    private Object getGame(Request request, Response response) {
-        Gson serializer = new Gson();
-        String token = request.headers(authStringVarToSatisfyQualityCode);
-        var getGameRequest = serializer.fromJson(request.body(), model.GameID.class);
+    private Object getGame(Request req, Response res) {
+        var token = req.headers(authHeader);
+        var body = new Gson().fromJson(req.body(), GameID.class);
         try {
-            GameData getGameResult = service.getGame(token, getGameRequest);
-            return serializer.toJson(getGameResult);
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            GameData result = service.getGame(token, body);
+            return new Gson().toJson(result);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
-
-    private Object updateGame(Request request, Response response) {
-        Gson serializer = new Gson();
-        String token = request.headers(authStringVarToSatisfyQualityCode);
-        var updateGameRequest = serializer.fromJson(request.body(), model.GameData.class);
+    private Object updateGame(Request req, Response res) {
+        var token = req.headers(authHeader);
+        var body = new Gson().fromJson(req.body(), GameData.class);
         try {
-            String updateGameResult = service.updateGame(token, updateGameRequest);
-            return serializer.toJson(updateGameResult);
-        } catch (DataAccessException e ) {
-            return returnErrorHelper(response,e);
+            String result = service.updateGame(token, body);
+            return new Gson().toJson(result);
+        } catch (DataAccessException e) {
+            return returnErrorHelper(res, e);
         }
     }
 
+    /**
+     * ✋ Stop the server when it’s time to dip.
+     */
     public void stop() {
         Spark.stop();
         Spark.awaitStop();
