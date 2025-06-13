@@ -60,7 +60,9 @@ public class Server {
      */
     private Object returnErrorHelper(Response res, DataAccessException e) {
         int status = e.getStatus();
-        if (status < 100 || status > 599) status = 500;
+        if (status < 100 || status > 599) {
+            status = 500;
+        }
         res.status(status);
         return new Gson().toJson(Map.of(
                 "message", "Error: " + e.getMessage(),

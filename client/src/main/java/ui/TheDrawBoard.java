@@ -116,7 +116,9 @@ public class TheDrawBoard {
     // 🔠 Return the letter that represents the piece type
     private static String setPieceType(int row, int col, ChessBoard board) {
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
-        if (piece == null) return null;
+        if (piece == null) {
+            return null;
+        }
 
         return switch (piece.getPieceType()) {
             case BISHOP -> "B";

@@ -123,7 +123,9 @@ public class WebSocketHandler {
                 getColumnLetter(move.getEndPosition().getColumn())
         };
 
-        if (!validateAndApplyMove(username, command, move, session, gameData)) return;
+        if (!validateAndApplyMove(username, command, move, session, gameData)) {
+            return;
+        }
 
         sendMoveUpdates(username, command, gameData, session);
         broadcastMoveNotification(username, move, columns, command.getGameID());

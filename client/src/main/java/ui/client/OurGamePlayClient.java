@@ -86,7 +86,9 @@ public class OurGamePlayClient {
 
     // ✨ get those little blue highlights showing where you can flex
     public String highlight(String authToken, String... params) {
-        if (params.length == 0) return "Missing position to highlight 😬";
+        if (params.length == 0) {
+            return "Missing position to highlight 😬";
+        }
         webSocket.highlight(authToken, params[0]);
         return "";
     }

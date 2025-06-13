@@ -15,18 +15,18 @@ import java.util.*;
  */
 public class MemoryDataAccessMethods implements DataAccessInterface {
 
-    private static final Map<String, UserData> RegisteredUsers = new HashMap<>();
-    private static final Map<Integer, GameData> CreatedGames = new HashMap<>();
-    private static final Map<String, AuthData> AuthData = new HashMap<>();
+    private static final Map<String, UserData> REGISTEREDUSERS = new HashMap<>();
+    private static final Map<Integer, GameData> CREATEDGAMES = new HashMap<>();
+    private static final Map<String, AuthData> AUTHDATA = new HashMap<>();
 
     /**
      * 🧹 Wipes everything from memory — factory reset time.
      */
     public String clear() throws DataAccessException {
         try {
-            RegisteredUsers.clear();
-            CreatedGames.clear();
-            AuthData.clear();
+            REGISTEREDUSERS.clear();
+            CREATEDGAMES.clear();
+            AUTHDATA.clear();
         } catch (Exception e) {
             throw new DataAccessException(e.getMessage(), 500);
         }
@@ -37,7 +37,7 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
      * 👀 Fetch user by username.
      */
     public UserData getUser(String username) {
-        return RegisteredUsers.get(username);
+        return REGISTEREDUSERS.get(username);
     }
 
     /**
@@ -52,28 +52,28 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
      */
     public void createUser(UserData userData) {
         var hashed = hashPassword(userData.password());
-        RegisteredUsers.put(userData.username(), new UserData(userData.username(), hashed, userData.email()));
+        REGISTEREDUSERS.put(userData.username(), new UserData(userData.username(), hashed, userData.email()));
     }
 
     /**
      * 🔑 Stores the user's auth token.
      */
     public void createAuth(AuthData auth) {
-        AuthData.put(auth.authToken(), auth);
+        AUTHDATA.put(auth.authToken(), auth);
     }
 
     /**
      * 🕵️ Gets auth data for a session token.
      */
     public AuthData getAuth(String token) {
-        return AuthData.get(token);
+        return AUTHDATA.get(token);
     }
 
     /**
      * ❌ Logs out the user by deleting their auth token.
      */
     public void deleteAuth(String token) {
-        AuthData.remove(token);
+        AUTHDATA.remove(token);
     }
 
     /**
@@ -81,7 +81,7 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
      */
     public Collection<GameList> listGames() {
         Collection<GameList> gameList = new ArrayList<>();
-        for (var game : CreatedGames.values()) {
+        for (var game : CREATEDGAMES.values()) {
             gameList.add(new GameList(game.gameID(), game.whiteUsername(), game.blackUsername(), game.gameName()));
         }
         return gameList;
@@ -91,14 +91,14 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
      * 🏁 Creates a new chess game and puts it in memory.
      */
     public void createGame(int gameID, String gameName, ChessGame game) {
-        CreatedGames.put(gameID, new GameData(gameID, null, null, gameName, game));
+        CREATEDGAMES.put(gameID, new GameData(gameID, null, null, gameName, game));
     }
 
     /**
      * 🔍 Retrieves a chess game by ID.
      */
     public GameData getGame(int gameID) {
-        return CreatedGames.get(gameID);
+        return CREATEDGAMES.get(gameID);
     }
 
     /**
@@ -109,7 +109,7 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
 
         System.out.println("🎯 Updating game info in memory...");
 
-        GameData updated = CreatedGames.get(gameID);
+        GameData updated = CREATEDGAMES.get(gameID);
 
         if (whiteUsername != null) {
             updated = updated.setWhiteUsername(whiteUsername);
@@ -126,7 +126,7 @@ public class MemoryDataAccessMethods implements DataAccessInterface {
             updated = updated.setGame(game);
         }
 
-        CreatedGames.put(gameID, updated);
+        CREATEDGAMES.put(gameID, updated);
     }
 
     /**

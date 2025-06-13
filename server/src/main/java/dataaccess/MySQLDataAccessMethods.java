@@ -193,10 +193,18 @@ public class MySQLDataAccessMethods implements DataAccessInterface {
      */
     public void updateGame(int gameID, String white, String black, String name, ChessGame game) throws DataAccessException {
         var updated = getGame(gameID);
-        if (white != null) updated = updated.setWhiteUsername(white);
-        if (black != null) updated = updated.setBlackUsername(black);
-        if (name != null) updated = updated.setGameName(name);
-        if (game != null) updated = updated.setGame(game);
+        if (white != null) {
+            updated = updated.setWhiteUsername(white);
+        }
+        if (black != null) {
+            updated = updated.setBlackUsername(black);
+        }
+        if (name != null) {
+            updated = updated.setGameName(name);
+        }
+        if (game != null) {
+            updated = updated.setGame(game);
+        }
 
         var gameJson = new Gson().toJson(updated.game());
         var sql = "UPDATE GameData SET whiteUsername=?, blackUsername=?, gameName=?, gameJson=? WHERE gameID=?";
@@ -208,8 +216,12 @@ public class MySQLDataAccessMethods implements DataAccessInterface {
      */
     public void updateGameUsernames(int gameID, String white, String black) throws DataAccessException {
         var updated = getGame(gameID);
-        if (white != null) updated = updated.setWhiteUsername(null);
-        if (black != null) updated = updated.setBlackUsername(null);
+        if (white != null) {
+            updated = updated.setWhiteUsername(null);
+        }
+        if (black != null) {
+            updated = updated.setBlackUsername(null);
+        }
 
         var gameJson = new Gson().toJson(updated.game());
         var sql = "UPDATE GameData SET whiteUsername=?, blackUsername=?, gameName=?, gameJson=? WHERE gameID=?";
