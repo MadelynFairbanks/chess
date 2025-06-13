@@ -1,3 +1,4 @@
+
 package websocket;
 
 import chess.*;
@@ -81,95 +82,97 @@ public class WebSocketHandler {
         connections.broadcast(username, notification, command.getGameID());
     }
 
-    private String getColumnLetter(int col) {
-        return switch (col) {
-            case 1 -> "a";
-            case 2 -> "b";
-            case 3 -> "c";
-            case 4 -> "d";
-            case 5 -> "e";
-            case 6 -> "f";
-            case 7 -> "g";
-            case 8 -> "h";
-            default -> "?"; // girl what column even is this
-        };
-    }
-
-    private void delayRace() {
-        try {
-            Thread.sleep(100); // we stan a polite thread
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // nap cancelled
-        }
-    }
-
     private void makeMove(Session session, MakeMoveCommand command) throws DataAccessException {
         System.out.println("Making move 💃");
+
         synchronized (connections) {
             String username = TheChessService.getAuthData(command.getAuthToken()).username();
             GameData gameData = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-
-            Collection<ChessMove> validMoves = connections.resigned.get(command.getGameID()) ? new ArrayList<>() :
-                    gameData.game().validMoves(command.getMove().getStartPosition());
-
             ChessMove move = command.getMove();
-            String startCol = getColumnLetter(move.getStartPosition().getColumn());
-            String endCol = getColumnLetter(move.getEndPosition().getColumn());
 
-            if (startCol.equals("?") || endCol.equals("?")) {
+            if (!isValidColumn(move)) {
                 connections.sendError(session.getRemote(), "bad input, try again 🤨");
                 return;
             }
 
-            if (validMoves.contains(move)) {
-                updateGameWMove(username, command, move, session, gameData, new String[]{startCol, endCol});
-            } else {
+            Collection<ChessMove> validMoves = getValidMoves(gameData, command);
+            if (!validMoves.contains(move)) {
                 connections.sendError(session.getRemote(), "Error: invalid move given 🚫");
-            }
-        }
-    }
-
-    private void updateGameWMove(String username, MakeMoveCommand command, ChessMove move,
-                                 Session session, GameData gameData, String[] columns) {
-        try {
-            GameData existingGame = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-            ChessGame.TeamColor color = gameData.game().getBoard().getPiece(move.getStartPosition()).getTeamColor();
-
-            boolean wrongPlayer = (color == ChessGame.TeamColor.WHITE && !gameData.whiteUsername().equals(username)) ||
-                    (color == ChessGame.TeamColor.BLACK && !gameData.blackUsername().equals(username));
-
-            if (wrongPlayer) {
-                connections.sendError(session.getRemote(), "Error: Not your turn 🚷");
                 return;
             }
 
-            gameData.game().makeMove(move);
+            processMove(username, command, move, session, gameData);
+        }
+    }
+
+    private boolean isValidColumn(ChessMove move) {
+        return !getColumnLetter(move.getStartPosition().getColumn()).equals("?") &&
+                !getColumnLetter(move.getEndPosition().getColumn()).equals("?");
+    }
+
+    private Collection<ChessMove> getValidMoves(GameData gameData, MakeMoveCommand command) {
+        return connections.resigned.get(command.getGameID())
+                ? new ArrayList<>()
+                : gameData.game().validMoves(command.getMove().getStartPosition());
+    }
+
+    private void processMove(String username, MakeMoveCommand command, ChessMove move,
+                             Session session, GameData gameData) {
+        String[] columns = {
+                getColumnLetter(move.getStartPosition().getColumn()),
+                getColumnLetter(move.getEndPosition().getColumn())
+        };
+
+        if (!validateAndApplyMove(username, command, move, session, gameData)) return;
+
+        sendMoveUpdates(username, command, gameData, session);
+        broadcastMoveNotification(username, move, columns, command.getGameID());
+
+        checkStatus(gameData, command, session, username); // 🧠 wrap it up
+    }
+
+    private boolean validateAndApplyMove(String username, MakeMoveCommand command, ChessMove move,
+                                         Session session, GameData gameData) {
+        try {
+            ChessGame.TeamColor color = gameData.game().getBoard().getPiece(move.getStartPosition()).getTeamColor();
+            boolean notYourTurn = (color == ChessGame.TeamColor.WHITE && !gameData.whiteUsername().equals(username)) ||
+                    (color == ChessGame.TeamColor.BLACK && !gameData.blackUsername().equals(username));
+
+            if (notYourTurn) {
+                connections.sendError(session.getRemote(), "Error: Not your turn 🚷");
+                return false;
+            }
+
+            gameData.game().makeMove(move); // 🏇 yeehaw
             TheChessService.updateGame(command.getAuthToken(), gameData);
+            return true;
 
         } catch (InvalidMoveException | DataAccessException e) {
             connections.sendError(session.getRemote(), "Error: invalid move 👎");
-            return;
+            return false;
         }
+    }
 
-        // notify player + others that a move just slayed
+    private void sendMoveUpdates(String username, MakeMoveCommand command,
+                                 GameData gameData, Session session) {
         try {
             ServerMessage update = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
             connections.send(update, username, command.getGameID());
-            delayRace();
+            delayRace(); // let the server chill for a sec
             connections.broadcast(username, update, command.getGameID());
         } catch (IOException e) {
             connections.sendError(session.getRemote(), "Error: couldn’t update game");
-            return;
         }
+    }
 
-        String moveMsg = String.format("%s moved %s to %s",
+    private void broadcastMoveNotification(String username, ChessMove move, String[] cols, int gameID) {
+        String msg = String.format("%s moved %s to %s",
                 username,
-                columns[0] + move.getStartPosition().getRow(),
-                columns[1] + move.getEndPosition().getRow());
-        connections.broadcast(username, new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, moveMsg, null), command.getGameID());
+                cols[0] + move.getStartPosition().getRow(),
+                cols[1] + move.getEndPosition().getRow());
 
-        // time to announce winners or check drama
-        checkStatus(gameData, command, session, username);
+        ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, msg, null);
+        connections.broadcast(username, notification, gameID);
     }
 
     private void checkStatus(GameData game, UserGameCommand command, Session session, String username) {
@@ -230,6 +233,28 @@ public class WebSocketHandler {
             } else if (username.equals(existingGame.blackUsername())) {
                 TheChessService.updateGameBlackUsername(command.getAuthToken(), username, existingGame.gameID());
             }
+        }
+    }
+
+    private String getColumnLetter(int col) {
+        return switch (col) {
+            case 1 -> "a";
+            case 2 -> "b";
+            case 3 -> "c";
+            case 4 -> "d";
+            case 5 -> "e";
+            case 6 -> "f";
+            case 7 -> "g";
+            case 8 -> "h";
+            default -> "?";
+        };
+    }
+
+    private void delayRace() {
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }

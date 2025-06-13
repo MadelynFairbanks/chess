@@ -12,12 +12,11 @@ public class TheDrawBoard {
 
     private static final int BOARD_SIZE_IN_SQUARES = 8;
     private static final int SQUARE_SIZE_IN_PADDED_CHARS = 2;
-    private static final int middleLine = SQUARE_SIZE_IN_PADDED_CHARS / 2;
 
     private static ChessBoard board;
     private static ChessGame game;
 
-    // ✨ Draws the board AND highlights valid moves for a selected piece
+    // 💡 Draw board w/ highlights for a selected piece's valid moves
     public void drawHighlighted(ChessBoard board, String perspective, ChessPosition position, ChessGame game) {
         TheDrawBoard.game = game;
         TheDrawBoard.board = board;
@@ -30,7 +29,7 @@ public class TheDrawBoard {
         drawHeaders(out, perspective);
     }
 
-    // 🎨 Draws the board without any highlighting
+    // 🎨 Plain board draw, no glowy highlight vibes
     public void draw(ChessBoard board, String perspective) {
         TheDrawBoard.board = board;
 
@@ -42,7 +41,7 @@ public class TheDrawBoard {
         drawHeaders(out, perspective);
     }
 
-    // 🧾 Draws the A–H / H–A column labels at top & bottom
+    // 🧾 A B C D E F G H or reversed – keepin’ the grid legit
     private static void drawHeaders(PrintStream out, String perspective) {
         setBlack(out);
         out.print("     ");
@@ -69,18 +68,44 @@ public class TheDrawBoard {
         setBlack(out);
     }
 
-    // 🧠 Draws either the white or black player’s view
+    // 🧠 Switch up the perspective depending on white/black/observer
     private static void drawChessBoard(PrintStream out, String perspective, ChessPosition highlight) {
+        boolean isWhitePerspective = perspective.equals("white") || perspective.equals("observer");
         for (int row = 0; row < BOARD_SIZE_IN_SQUARES; row++) {
-            if (perspective.equals("white") || perspective.equals("observer")) {
-                drawRowOfSquaresPerspectiveWhite(out, row, highlight);
-            } else {
-                drawRowOfSquaresPerspectiveBlack(out, row, highlight);
-            }
+            drawRowOfSquares(out, row, highlight, isWhitePerspective);
         }
     }
 
-    // 🎨 Determine what color to draw the chess piece based on team
+    // 🧠 This is the big brain unified row drawer – no more duplication 🚀
+    private static void drawRowOfSquares(PrintStream out, int row, ChessPosition highlight, boolean isWhitePerspective) {
+        Collection<ChessMove> validMoves = null;
+        int displayRow = isWhitePerspective ? 8 - row : row + 1;
+        out.print(SET_TEXT_COLOR_GREEN);
+        out.printf("   %2d ", displayRow);
+
+        for (int col = 0; col < BOARD_SIZE_IN_SQUARES; col++) {
+            int displayCol = isWhitePerspective ? col + 1 : 8 - col;
+
+            boolean isDarkSquare = (row + col) % 2 == 1;
+
+            if (highlight != null) {
+                validMoves = game.validMoves(highlight);
+                ChessMove move = new ChessMove(highlight, new ChessPosition(displayRow, displayCol), null);
+                setColorByHighlight(out, isDarkSquare, validMoves.contains(move));
+            } else {
+                setColorDefault(out, isDarkSquare);
+            }
+
+            drawPiece(out, displayRow, displayCol);
+        }
+
+        setBlack(out);
+        out.print(SET_TEXT_COLOR_GREEN);
+        out.printf(" %2d", displayRow);
+        out.println();
+    }
+
+    // 💅 Give the piece its stylish team color
     private static String setPieceColor(int row, int col, ChessBoard board) {
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
         return (piece.getTeamColor() == ChessGame.TeamColor.WHITE)
@@ -88,7 +113,7 @@ public class TheDrawBoard {
                 : SET_TEXT_COLOR_BLACK;
     }
 
-    // 🧩 Get the piece symbol for a given square
+    // 🔠 Return the letter that represents the piece type
     private static String setPieceType(int row, int col, ChessBoard board) {
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
         if (piece == null) return null;
@@ -103,64 +128,7 @@ public class TheDrawBoard {
         };
     }
 
-    // ♟️ Draw a row from the BLACK perspective
-    private static void drawRowOfSquaresPerspectiveBlack(PrintStream out, int row, ChessPosition highlight) {
-        Collection<ChessMove> validMoves = null;
-        out.print(SET_TEXT_COLOR_GREEN);
-        out.printf("   %2d ", row + 1);
-
-        for (int col = 0; col < BOARD_SIZE_IN_SQUARES; col++) {
-            int actualRow = row + 1;
-            int actualCol = 8 - col;
-
-            boolean isDarkSquare = (row + col) % 2 == 1;
-            if (highlight != null) {
-                validMoves = game.validMoves(highlight);
-                ChessMove move = new ChessMove(highlight, new ChessPosition(actualRow, actualCol), null);
-                setColorByHighlight(out, isDarkSquare, validMoves.contains(move));
-            } else {
-                setColorDefault(out, isDarkSquare);
-            }
-
-            drawPiece(out, actualRow, actualCol);
-        }
-
-        setBlack(out);
-        out.print(SET_TEXT_COLOR_GREEN);
-        out.printf(" %2d", row + 1);
-        out.println();
-    }
-
-    // ♟️ Draw a row from the WHITE perspective
-    private static void drawRowOfSquaresPerspectiveWhite(PrintStream out, int row, ChessPosition highlight) {
-        Collection<ChessMove> validMoves = null;
-        int actualRow = 8 - row;
-
-        out.print(SET_TEXT_COLOR_GREEN);
-        out.printf("   %2d ", actualRow);
-
-        for (int col = 0; col < BOARD_SIZE_IN_SQUARES; col++) {
-            int actualCol = col + 1;
-
-            boolean isDarkSquare = (row + col) % 2 == 1;
-            if (highlight != null) {
-                validMoves = game.validMoves(highlight);
-                ChessMove move = new ChessMove(highlight, new ChessPosition(actualRow, actualCol), null);
-                setColorByHighlight(out, isDarkSquare, validMoves.contains(move));
-            } else {
-                setColorDefault(out, isDarkSquare);
-            }
-
-            drawPiece(out, actualRow, actualCol);
-        }
-
-        setBlack(out);
-        out.print(SET_TEXT_COLOR_GREEN);
-        out.printf(" %2d", actualRow);
-        out.println();
-    }
-
-    // 🎯 Determines whether to draw white/grey OR highlight yellow
+    // 🌈 Decide the vibe: default square or highlight it
     private static void setColorByHighlight(PrintStream out, boolean isDarkSquare, boolean isHighlight) {
         if (isHighlight) {
             setYellow(out);
@@ -169,7 +137,7 @@ public class TheDrawBoard {
         }
     }
 
-    // 🎨 Sets standard square color
+    // 🧱 Paint the square: grey = dark, white = light
     private static void setColorDefault(PrintStream out, boolean isDarkSquare) {
         if (isDarkSquare) {
             setGrey(out);
@@ -178,7 +146,7 @@ public class TheDrawBoard {
         }
     }
 
-    // ♟️ Actually print a piece OR a blank space
+    // 🎭 Draw the actual piece or just leave it blank
     private static void drawPiece(PrintStream out, int row, int col) {
         String piece = setPieceType(row, col, board);
         if (piece == null) {
@@ -188,7 +156,7 @@ public class TheDrawBoard {
         }
     }
 
-    // 🎨 Background + text color helpers
+    // 🎨 Background and foreground setter squad
     private static void setWhite(PrintStream out) {
         out.print(SET_BG_COLOR_WHITE + SET_TEXT_COLOR_WHITE);
     }
