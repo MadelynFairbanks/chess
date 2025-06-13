@@ -18,96 +18,68 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-
-
 @WebSocket
 public class WebSocketHandler {
-    private final ConnectionManager connections = new ConnectionManager();
+    private final ConnectionManager connections = new ConnectionManager(); // squad manager tbh
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
         try {
-
             JsonObject json = JsonParser.parseString(message).getAsJsonObject();
             String commandType = json.get("commandType").getAsString();
-            System.out.println("WebsocketHandler on message: " + commandType);
+            System.out.println("WebSocketHandler got message type: " + commandType);
 
             switch (commandType) {
-                case "CONNECT":
-                    UserGameCommand command = new Gson().fromJson(message, UserGameCommand.class);
-                    connect(session, command);
-                    break;
-                case "MAKE_MOVE":
-                    MakeMoveCommand moveCommand = new Gson().fromJson(message, MakeMoveCommand.class);
-                    makeMove(session, moveCommand);
-                    break;
-                case "LEAVE":
-                    UserGameCommand leaveCommand = new Gson().fromJson(message, UserGameCommand.class);
-                    leaveGame(leaveCommand);
-                    break;
-                case "RESIGN":
-                    UserGameCommand resignCommand = new Gson().fromJson(message, UserGameCommand.class);
-                    resign(session, resignCommand);
-                    break;
+                case "CONNECT" -> connect(session, new Gson().fromJson(message, UserGameCommand.class));
+                case "MAKE_MOVE" -> makeMove(session, new Gson().fromJson(message, MakeMoveCommand.class));
+                case "LEAVE" -> leaveGame(new Gson().fromJson(message, UserGameCommand.class));
+                case "RESIGN" -> resign(session, new Gson().fromJson(message, UserGameCommand.class));
             }
         } catch (DataAccessException ex) {
-            // Serializes and sends the error message
-            connections.sendError(session.getRemote(), "Error: unauthorized");
+            connections.sendError(session.getRemote(), "Error: unauthorized"); // classic permission drama
         }
     }
 
-
-
     @OnWebSocketError
     public void onError(Session session, Throwable throwable) {
-        System.err.println("WebSocket Error for session " + session + ": " + throwable.getMessage());
-        throwable.printStackTrace();
+        System.err.println("⚠️ WebSocket Error for session " + session + ": " + throwable.getMessage());
+        throwable.printStackTrace(); // gotta air the dirty laundry
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
-        System.out.println("WebSocket Closed. Code: " + statusCode + ", Reason: " + reason);
+        System.out.println("✌️ WebSocket Closed. Code: " + statusCode + ", Reason: " + reason);
     }
-
-
-
-
-
 
     private void connect(Session session, UserGameCommand command) throws DataAccessException {
-            connections.resigned.put(command.getGameID(), false);
-            String username = (ChessService.getAuthData(command.getAuthToken())).username();
-            connections.addConnection(username, command.getGameID(), session);
-            String view;
-            GameData gameData;
-            System.out.println("Game ID: " + command.getGameID());
-            try {
-                gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-            } catch (DataAccessException e) {
-                connections.sendError(session.getRemote(), "Error: GameData is unusable 1");
-                return;
-            }
-            ServerMessage serverMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
-            try {
-                connections.send(serverMessage, username, command.getGameID());
-            } catch (IOException e) {
-                connections.sendError(session.getRemote(), "Error: GameData is unusable 2");
-                return;
-            }
-            if (gameData.blackUsername() != null && gameData.blackUsername().equals(username)) {
-                view = "BLACK";
-            } else if (gameData.whiteUsername() != null && gameData.whiteUsername().equals(username)) {
-                view = "WHITE";
-            } else {
-                view = " an Observer.";
-            }
-            var message = String.format("%s has joined the game as %s", username, view);
-            var notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
-            connections.broadcast(username, notification, command.getGameID());
+        connections.resigned.put(command.getGameID(), false);
+        String username = ChessService.getAuthData(command.getAuthToken()).username();
+        connections.addConnection(username, command.getGameID(), session);
 
+        GameData gameData;
+        try {
+            gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+        } catch (DataAccessException e) {
+            connections.sendError(session.getRemote(), "Error: GameData is unusable 1");
+            return;
+        }
+
+        ServerMessage loadMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
+        try {
+            connections.send(loadMessage, username, command.getGameID());
+        } catch (IOException e) {
+            connections.sendError(session.getRemote(), "Error: GameData is unusable 2");
+            return;
+        }
+
+        String view = gameData.blackUsername() != null && gameData.blackUsername().equals(username) ? "BLACK" :
+                gameData.whiteUsername() != null && gameData.whiteUsername().equals(username) ? "WHITE" :
+                        "an Observer 👀";
+
+        String joinMessage = String.format("%s has joined the game as %s", username, view);
+        ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, joinMessage, null);
+        connections.broadcast(username, notification, command.getGameID());
     }
-
-
 
     private String getColumnLetter(int col) {
         return switch (col) {
@@ -119,190 +91,145 @@ public class WebSocketHandler {
             case 6 -> "f";
             case 7 -> "g";
             case 8 -> "h";
-            default -> "?";
+            default -> "?"; // girl what column even is this
         };
     }
 
-
-    private void delayRace(){
+    private void delayRace() {
         try {
-            Thread.sleep(100);
+            Thread.sleep(100); // we stan a polite thread
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            Thread.currentThread().interrupt(); // nap cancelled
         }
     }
-
-
 
     private void makeMove(Session session, MakeMoveCommand command) throws DataAccessException {
-            System.out.println("Making Move");
-            synchronized (connections) {
-                String username = (ChessService.getAuthData(command.getAuthToken())).username();
-                GameData gameData;
-                try {
-                    gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-                } catch (DataAccessException e) {
-                    connections.sendError(session.getRemote(), "Error: GameData is unusable");
-                    return;
-                }
-                Collection<ChessMove> validMoves = gameData.game().validMoves(command.getMove().getStartPosition());
-                Boolean resigned = connections.resigned.get(command.getGameID());
-                if (resigned) {
-                    validMoves = new ArrayList<>();
-                }
-                ChessMove chessMove = command.getMove();
-                int startCol = command.getMove().getStartPosition().getColumn();
-                int endCol = command.getMove().getEndPosition().getColumn();
-                String[] columns = {getColumnLetter(startCol), getColumnLetter(endCol)};
-                if (columns[0].equals("?") || columns[1].equals("?")) {
-                    connections.sendError(session.getRemote(), "bad input, try again");
-                }
-                System.out.println(chessMove.getStartPosition().row );
-                System.out.println(chessMove.getStartPosition().col );
-                if (validMoves.contains(chessMove)) {
-                    updateGameWMove(username, command, chessMove, session, gameData, columns);
-                } else {
-                    System.out.println("invalid move given error sent");
-                    connections.sendError(session.getRemote(), "Error: invalid move given");
-                }
+        System.out.println("Making move 💃");
+        synchronized (connections) {
+            String username = ChessService.getAuthData(command.getAuthToken()).username();
+            GameData gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
 
-            }
+            Collection<ChessMove> validMoves = connections.resigned.get(command.getGameID()) ? new ArrayList<>() :
+                    gameData.game().validMoves(command.getMove().getStartPosition());
 
-    }
+            ChessMove move = command.getMove();
+            String startCol = getColumnLetter(move.getStartPosition().getColumn());
+            String endCol = getColumnLetter(move.getEndPosition().getColumn());
 
-    private void updateGameWMove(String username, MakeMoveCommand command, ChessMove chessMove,
-                                 Session session, GameData gameData, String[] columns){
-        try {
-            GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-            ChessGame.TeamColor teamColor =
-                    gameData.game().getBoard().getPiece(chessMove.getStartPosition()).getTeamColor();
-            if ((teamColor == ChessGame.TeamColor.WHITE && !gameData.whiteUsername().equals(username)) ||
-                    (teamColor == ChessGame.TeamColor.BLACK && !gameData.blackUsername().equals(username))) {
-                connections.sendError(session.getRemote(), "Error: Not your turn!");
+            if (startCol.equals("?") || endCol.equals("?")) {
+                connections.sendError(session.getRemote(), "bad input, try again 🤨");
                 return;
             }
-            existingGame.setGame(gameData.game());
-            gameData.game().makeMove(chessMove);
-            ChessService.updateGame(command.getAuthToken(), gameData);
-        } catch (InvalidMoveException | DataAccessException e) {
-            connections.sendError(session.getRemote(), "Error: Not your turn !");
-            return;
-        }
-        //            Broadcast Loaded game to User
-        ServerMessage serverMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
 
-        try {
-            connections.send(serverMessage, username, command.getGameID());
-            delayRace();
-        } catch (IOException e) {
-            connections.sendError(session.getRemote(), "Error:  could not send Notification");
-            return;
-        }
-//            Broadcast loaded game to everyone else
-        var gameUpdate = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
-        connections.broadcast(username, gameUpdate, command.getGameID());
-        delayRace();
-        var message = String.format("%s has moved %s to position %s",
-                username,
-                columns[0] + command.getMove().getStartPosition().getRow(),
-                columns[1] + command.getMove().getEndPosition().getRow());
-        var notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
-        connections.broadcast(username, notification, command.getGameID());
-
-        String white = gameData.whiteUsername();
-        String black = gameData.blackUsername();
-        System.out.println("white username: " + white);
-        System.out.println("black username: " + black);
-
-
-        if (gameData.game().isInCheckmate(ChessGame.TeamColor.WHITE)) {
-            var checkmateMessage = "!!Checkmate!! \n %s Wins!!!";
-            var finalMessage = String.format(checkmateMessage, black);
-            notifyEveryone(username, session, command, finalMessage);
-        } else if (gameData.game().isInCheckmate(ChessGame.TeamColor.BLACK)) {
-            var checkmateMessage = "!!Checkmate!! \n %s Wins!!!";
-            var finalMessage = String.format(checkmateMessage, white);
-            notifyEveryone(username, session, command, finalMessage);
-        } else if (gameData.game().isInCheck(ChessGame.TeamColor.WHITE)) {
-            var checkMessage = "%s is in Check.";
-            var finalMessage = String.format(checkMessage, white);
-            notifyEveryone(username, session, command, finalMessage);
-        } else if (gameData.game().isInCheck(ChessGame.TeamColor.BLACK)) {
-            var checkMessage = "%s is in Check.";
-            var finalMessage = String.format(checkMessage, black);
-            notifyEveryone(username, session, command, finalMessage);
+            if (validMoves.contains(move)) {
+                updateGameWMove(username, command, move, session, gameData, new String[]{startCol, endCol});
+            } else {
+                connections.sendError(session.getRemote(), "Error: invalid move given 🚫");
+            }
         }
     }
 
-    private void notifyEveryone(String username, Session session, UserGameCommand command, String message){
-        var checkmateNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
+    private void updateGameWMove(String username, MakeMoveCommand command, ChessMove move,
+                                 Session session, GameData gameData, String[] columns) {
         try {
-            connections.send(checkmateNotification, username, command.getGameID());
-            connections.broadcast(username, checkmateNotification, command.getGameID());
+            GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            ChessGame.TeamColor color = gameData.game().getBoard().getPiece(move.getStartPosition()).getTeamColor();
+
+            boolean wrongPlayer = (color == ChessGame.TeamColor.WHITE && !gameData.whiteUsername().equals(username)) ||
+                    (color == ChessGame.TeamColor.BLACK && !gameData.blackUsername().equals(username));
+
+            if (wrongPlayer) {
+                connections.sendError(session.getRemote(), "Error: Not your turn 🚷");
+                return;
+            }
+
+            gameData.game().makeMove(move);
+            ChessService.updateGame(command.getAuthToken(), gameData);
+
+        } catch (InvalidMoveException | DataAccessException e) {
+            connections.sendError(session.getRemote(), "Error: invalid move 👎");
+            return;
+        }
+
+        // notify player + others that a move just slayed
+        try {
+            ServerMessage update = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData, null, null);
+            connections.send(update, username, command.getGameID());
+            delayRace();
+            connections.broadcast(username, update, command.getGameID());
         } catch (IOException e) {
-            connections.sendError(session.getRemote(), "Error:  could not send Notification 2257");
+            connections.sendError(session.getRemote(), "Error: couldn’t update game");
+            return;
+        }
+
+        String moveMsg = String.format("%s moved %s to %s",
+                username,
+                columns[0] + move.getStartPosition().getRow(),
+                columns[1] + move.getEndPosition().getRow());
+        connections.broadcast(username, new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, moveMsg, null), command.getGameID());
+
+        // time to announce winners or check drama
+        checkStatus(gameData, command, session, username);
+    }
+
+    private void checkStatus(GameData game, UserGameCommand command, Session session, String username) {
+        String white = game.whiteUsername();
+        String black = game.blackUsername();
+
+        if (game.game().isInCheckmate(ChessGame.TeamColor.WHITE)) {
+            notifyEveryone(username, session, command, String.format("‼️ Checkmate ‼️\n%s wins!", black));
+        } else if (game.game().isInCheckmate(ChessGame.TeamColor.BLACK)) {
+            notifyEveryone(username, session, command, String.format("‼️ Checkmate ‼️\n%s wins!", white));
+        } else if (game.game().isInCheck(ChessGame.TeamColor.WHITE)) {
+            notifyEveryone(username, session, command, String.format("%s is in check ⚠️", white));
+        } else if (game.game().isInCheck(ChessGame.TeamColor.BLACK)) {
+            notifyEveryone(username, session, command, String.format("%s is in check ⚠️", black));
+        }
+    }
+
+    private void notifyEveryone(String username, Session session, UserGameCommand command, String msg) {
+        ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, msg, null);
+        try {
+            connections.send(notification, username, command.getGameID());
+            connections.broadcast(username, notification, command.getGameID());
+        } catch (IOException e) {
+            connections.sendError(session.getRemote(), "Error: can't notify the squad");
         }
     }
 
     private void resign(Session session, UserGameCommand command) throws DataAccessException {
-            if (!connections.resigned.get(command.getGameID())) {
-                System.out.println("resign log -- resign was called");
-                String username = (ChessService.getAuthData(command.getAuthToken())).username();
-                String victor;
-                GameData gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-                if (gameData.whiteUsername().equals(username)) {
-                    System.out.println("resign log -- white resign");
-                    connections.resigned.put(command.getGameID(), true);
-                    victor = "BLACK";
-                    var resignMessage = String.format("%s has resigned%n %s Wins!",
-                            username, victor);
-                    notifyEveryone(username, session, command, resignMessage);
-                } else if (gameData.blackUsername().equals(username)) {
-                    System.out.println("resign log -- black resign");
-                    connections.resigned.put(command.getGameID(), true);
-                    victor = "WHITE";
-                    var resignMessage = String.format("%s has resigned%n %s Wins!",
-                            username, victor);
-                    notifyEveryone(username, session, command, resignMessage);
-                } else {
-                    connections.sendError(session.getRemote(), "Error:  You Are an Observer, NOT a Playa!");
-                }
-            } else {
-                connections.sendError(session.getRemote(), "Error:  User Already Resigned");
-            }
+        if (!connections.resigned.get(command.getGameID())) {
+            String username = ChessService.getAuthData(command.getAuthToken()).username();
+            GameData game = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
 
+            String victor = game.whiteUsername().equals(username) ? "BLACK" :
+                    game.blackUsername().equals(username) ? "WHITE" : null;
+
+            if (victor != null) {
+                connections.resigned.put(command.getGameID(), true);
+                notifyEveryone(username, session, command, String.format("%s has resigned 😔\n%s wins 🎉", username, victor));
+            } else {
+                connections.sendError(session.getRemote(), "Error: You’re just an observer, boo 👀");
+            }
+        } else {
+            connections.sendError(session.getRemote(), "Error: Already resigned 👋");
+        }
     }
 
     private void leaveGame(UserGameCommand command) throws DataAccessException {
         synchronized (connections) {
-            String username = (ChessService.getAuthData(command.getAuthToken())).username();
-        GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
-        var message = username + " left the game" ;
+            String username = ChessService.getAuthData(command.getAuthToken()).username();
+            GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+
+            var leaveMessage = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, username + " left the game 🏃", null);
+            connections.broadcast(username, leaveMessage, command.getGameID());
+            connections.removePlayer(command.getGameID(), username);
+
             if (username.equals(existingGame.whiteUsername())) {
-                System.out.println("white username leaving");
-                GameData gameData = new GameData(existingGame.gameID(), "game", null, existingGame.gameName(), existingGame.game());
-                ChessService.updateGameWhiteUsername(command.getAuthToken(), username, gameData.gameID());
-                var checkmateNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
-                connections.broadcast(username, checkmateNotification, command.getGameID());
-                connections.removePlayer(command.getGameID(), username);
-
+                ChessService.updateGameWhiteUsername(command.getAuthToken(), username, existingGame.gameID());
             } else if (username.equals(existingGame.blackUsername())) {
-                System.out.println("black username leaving");
-
-                GameData gameData = new GameData(existingGame.gameID(), null, "game", existingGame.gameName(), existingGame.game());
-                ChessService.updateGameBlackUsername(command.getAuthToken(), username, gameData.gameID());
-                var checkmateNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
-                connections.broadcast(username, checkmateNotification, command.getGameID());
-                connections.removePlayer(command.getGameID(), username);
-
-            } else {
-                System.out.println("observer username leaving");
-                var checkmateNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, message, null);
-                connections.broadcast(username, checkmateNotification, command.getGameID());
-                connections.removePlayer(command.getGameID(), username);
-
+                ChessService.updateGameBlackUsername(command.getAuthToken(), username, existingGame.gameID());
             }
         }
     }
-
 }
