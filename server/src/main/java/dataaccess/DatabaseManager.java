@@ -14,11 +14,6 @@ public class DatabaseManager {
      */
     static {
         loadPropertiesFromResources();
-
-        // Prevent autograder from flagging loadProperties(Properties) as unused
-        if (false) {
-            loadProperties(new Properties());
-        }
     }
 
     /**
@@ -30,48 +25,10 @@ public class DatabaseManager {
              var preparedStatement = conn.prepareStatement(statement)) {
             preparedStatement.executeUpdate();
         } catch (SQLException ex) {
-            throw new DataAccessException("failed to create database", ex);
+            throw new DataAccessException("failed to create database", ex.getErrorCode());
         }
     }
-    public static void createTables() throws DataAccessException {
-        try (var conn = getConnection();
-             var stmt = conn.createStatement()) {
 
-            // users table
-            stmt.executeUpdate("""
-            CREATE TABLE IF NOT EXISTS users (
-                username VARCHAR(50) PRIMARY KEY,
-                password VARCHAR(100) NOT NULL,
-                email VARCHAR(100) NOT NULL
-            );
-        """);
-
-            // auth_tokens table
-            stmt.executeUpdate("""
-            CREATE TABLE IF NOT EXISTS auth_tokens (
-                token VARCHAR(100) PRIMARY KEY,
-                username VARCHAR(50) NOT NULL,
-                FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
-            );
-        """);
-
-            // games table
-            stmt.executeUpdate("""
-            CREATE TABLE IF NOT EXISTS games (
-                gameID INT PRIMARY KEY AUTO_INCREMENT,
-                gameName VARCHAR(100) NOT NULL,
-                whiteUsername VARCHAR(50),
-                blackUsername VARCHAR(50),
-                game TEXT NOT NULL,
-                FOREIGN KEY (whiteUsername) REFERENCES users(username) ON DELETE SET NULL,
-                FOREIGN KEY (blackUsername) REFERENCES users(username) ON DELETE SET NULL
-            );
-        """);
-
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to create tables", e);
-        }
-    }
     /**
      * Create a connection to the database and sets the catalog based upon the
      * properties specified in db.properties. Connections to the database should
@@ -84,64 +41,30 @@ public class DatabaseManager {
      * }
      * </code>
      */
-    //I added this public down here because you told me to, Chat
-    public static Connection getConnection() throws DataAccessException {
+    static Connection getConnection() throws DataAccessException {
         try {
             //do not wrap the following line with a try-with-resources
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
             conn.setCatalog(databaseName);
             return conn;
         } catch (SQLException ex) {
-            throw new DataAccessException("failed to get connection", ex);
+            throw new DataAccessException("failed to get connection", ex.getErrorCode());
         }
     }
 
     private static void loadPropertiesFromResources() {
-        Properties props = new Properties();
-
         try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
-            if (propStream != null) {
-                props.load(propStream);
+            if (propStream == null) {
+                throw new Exception("Unable to load db.properties");
             }
-        } catch (Exception e) {
-            System.out.println("No db.properties file found — attempting to use environment variables.");
-        }
-
-        // Prefer environment variables, fallback to props, then to hardcoded defaults
-        databaseName = System.getenv("DB_NAME");
-        if (databaseName == null) {
-            databaseName = props.getProperty("db.name", "chess");
-        }
-
-        dbUsername = System.getenv("DB_USER");
-        if (dbUsername == null) {
-            dbUsername = props.getProperty("db.user", "root");
-        }
-
-        dbPassword = System.getenv("DB_PASSWORD");
-        if (dbPassword == null) {
-            dbPassword = props.getProperty("db.password", "MyChessRoot2025!");
-        }
-
-        var host = System.getenv("DB_HOST");
-        if (host == null) {
-            host = props.getProperty("db.host", "localhost");
-        }
-
-        var portStr = System.getenv("DB_PORT");
-        if (portStr == null) {
-            portStr = props.getProperty("db.port", "3306");
-        }
-
-        try {
-            int port = Integer.parseInt(portStr);
-            connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid port number for database: " + portStr);
+            Properties props = new Properties();
+            props.load(propStream);
+            loadProperties(props);
+        } catch (Exception ex) {
+            throw new RuntimeException("unable to process db.properties", ex);
         }
     }
 
-    @SuppressWarnings("unused") // Used by test harness or manual config injection
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
         dbUsername = props.getProperty("db.user");
@@ -151,5 +74,4 @@ public class DatabaseManager {
         var port = Integer.parseInt(props.getProperty("db.port"));
         connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
     }
-
 }

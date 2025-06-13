@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>edu.byu.cs240</groupId>
-    <artifactId>3</artifactId>
+    <artifactId>chess</artifactId>
     <version>1.0.0</version>
 
     <properties>

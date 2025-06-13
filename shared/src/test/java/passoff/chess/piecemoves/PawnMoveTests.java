@@ -239,7 +239,6 @@ public class PawnMoveTests {
         );
     }
 
-
     @Test
     public void pawnMoveFromEdgeWhite() {
         TestUtilities.validateMoves("""

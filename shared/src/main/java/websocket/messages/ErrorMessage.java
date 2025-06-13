@@ -1,15 +1,13 @@
 package websocket.messages;
 
-public class ErrorMessage extends ServerMessage {
-    private final String errorMessage;
+import com.google.gson.Gson;
 
-    public ErrorMessage(String errorMessage) {
-        super(ServerMessageType.ERROR);
-        this.errorMessage = errorMessage;
+public record ErrorMessage(String message) {
+    public String toString() {
+        return new Gson().toJson(this);
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public String getMessage() {
+        return message;
     }
 }
-

@@ -9,9 +9,9 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessMove {
-    private final ChessPosition startPosition;
-    private final ChessPosition endPosition;
-    private final ChessPiece.PieceType promotionPiece;
+    ChessPosition startPosition;
+    ChessPosition endPosition;
+    ChessPiece.PieceType promotionPiece;
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
                      ChessPiece.PieceType promotionPiece) {
@@ -24,14 +24,14 @@ public class ChessMove {
      * @return ChessPosition of starting location
      */
     public ChessPosition getStartPosition() {
-        return startPosition;
+        return this.startPosition;
     }
 
     /**
      * @return ChessPosition of ending location
      */
     public ChessPosition getEndPosition() {
-        return endPosition;
+        return this.endPosition;
     }
 
     /**
@@ -41,7 +41,7 @@ public class ChessMove {
      * @return Type of piece to promote a pawn to, or null if no promotion
      */
     public ChessPiece.PieceType getPromotionPiece() {
-        return promotionPiece;
+        return this.promotionPiece;
     }
 
     @Override
@@ -49,23 +49,17 @@ public class ChessMove {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ChessMove)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ChessMove that = (ChessMove) o;
-        return Objects.equals(startPosition, that.startPosition) &&
-                Objects.equals(endPosition, that.endPosition) &&
-                promotionPiece == that.promotionPiece;
+        ChessMove chessMove = (ChessMove) o;
+        return Objects.equals(startPosition, chessMove.startPosition) &&
+                Objects.equals(endPosition, chessMove.endPosition) &&
+                promotionPiece == chessMove.promotionPiece;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(startPosition, endPosition, promotionPiece);
-    }
-
-    @Override
-    public String toString() {
-        return startPosition + " -> " + endPosition + " " +
-                (promotionPiece != null ? "promote to " + promotionPiece : "");
     }
 }
