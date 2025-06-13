@@ -9,7 +9,7 @@ import model.GameData;
 import model.GameID;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
-import service.ChessService;
+import service.TheChessService;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
@@ -53,12 +53,12 @@ public class WebSocketHandler {
 
     private void connect(Session session, UserGameCommand command) throws DataAccessException {
         connections.resigned.put(command.getGameID(), false);
-        String username = ChessService.getAuthData(command.getAuthToken()).username();
+        String username = TheChessService.getAuthData(command.getAuthToken()).username();
         connections.addConnection(username, command.getGameID(), session);
 
         GameData gameData;
         try {
-            gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            gameData = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
         } catch (DataAccessException e) {
             connections.sendError(session.getRemote(), "Error: GameData is unusable 1");
             return;
@@ -106,8 +106,8 @@ public class WebSocketHandler {
     private void makeMove(Session session, MakeMoveCommand command) throws DataAccessException {
         System.out.println("Making move 💃");
         synchronized (connections) {
-            String username = ChessService.getAuthData(command.getAuthToken()).username();
-            GameData gameData = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            String username = TheChessService.getAuthData(command.getAuthToken()).username();
+            GameData gameData = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
 
             Collection<ChessMove> validMoves = connections.resigned.get(command.getGameID()) ? new ArrayList<>() :
                     gameData.game().validMoves(command.getMove().getStartPosition());
@@ -132,7 +132,7 @@ public class WebSocketHandler {
     private void updateGameWMove(String username, MakeMoveCommand command, ChessMove move,
                                  Session session, GameData gameData, String[] columns) {
         try {
-            GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            GameData existingGame = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
             ChessGame.TeamColor color = gameData.game().getBoard().getPiece(move.getStartPosition()).getTeamColor();
 
             boolean wrongPlayer = (color == ChessGame.TeamColor.WHITE && !gameData.whiteUsername().equals(username)) ||
@@ -144,7 +144,7 @@ public class WebSocketHandler {
             }
 
             gameData.game().makeMove(move);
-            ChessService.updateGame(command.getAuthToken(), gameData);
+            TheChessService.updateGame(command.getAuthToken(), gameData);
 
         } catch (InvalidMoveException | DataAccessException e) {
             connections.sendError(session.getRemote(), "Error: invalid move 👎");
@@ -199,8 +199,8 @@ public class WebSocketHandler {
 
     private void resign(Session session, UserGameCommand command) throws DataAccessException {
         if (!connections.resigned.get(command.getGameID())) {
-            String username = ChessService.getAuthData(command.getAuthToken()).username();
-            GameData game = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            String username = TheChessService.getAuthData(command.getAuthToken()).username();
+            GameData game = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
 
             String victor = game.whiteUsername().equals(username) ? "BLACK" :
                     game.blackUsername().equals(username) ? "WHITE" : null;
@@ -218,17 +218,17 @@ public class WebSocketHandler {
 
     private void leaveGame(UserGameCommand command) throws DataAccessException {
         synchronized (connections) {
-            String username = ChessService.getAuthData(command.getAuthToken()).username();
-            GameData existingGame = ChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
+            String username = TheChessService.getAuthData(command.getAuthToken()).username();
+            GameData existingGame = TheChessService.getGame(command.getAuthToken(), new GameID(command.getGameID()));
 
             var leaveMessage = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, null, username + " left the game 🏃", null);
             connections.broadcast(username, leaveMessage, command.getGameID());
             connections.removePlayer(command.getGameID(), username);
 
             if (username.equals(existingGame.whiteUsername())) {
-                ChessService.updateGameWhiteUsername(command.getAuthToken(), username, existingGame.gameID());
+                TheChessService.updateGameWhiteUsername(command.getAuthToken(), username, existingGame.gameID());
             } else if (username.equals(existingGame.blackUsername())) {
-                ChessService.updateGameBlackUsername(command.getAuthToken(), username, existingGame.gameID());
+                TheChessService.updateGameBlackUsername(command.getAuthToken(), username, existingGame.gameID());
             }
         }
     }

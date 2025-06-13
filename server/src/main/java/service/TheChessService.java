@@ -9,11 +9,11 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.util.Collection;
 import java.util.UUID;
 
-public class ChessService {
+public class TheChessService {
 
     private static DataAccessInterface dataAccess;
 
-    public ChessService(DataAccessInterface dataAccess) {
+    public TheChessService(DataAccessInterface dataAccess) {
         this.dataAccess = dataAccess;
     }
 

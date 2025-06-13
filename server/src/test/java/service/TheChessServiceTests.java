@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ChessServiceTests {
-    ChessService service = new ChessService(new MemoryDataAccessMethods());
+public class TheChessServiceTests {
+    TheChessService service = new TheChessService(new MemoryDataAccessMethods());
     @AfterEach
     void stopServer() throws DataAccessException {
-        ChessService.clear();
+        TheChessService.clear();
     }
 
 

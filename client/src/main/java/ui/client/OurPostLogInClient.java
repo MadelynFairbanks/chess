@@ -9,7 +9,7 @@ import ui.websocket.WebSocketFacade;
 
 import java.util.*;
 
-public class PostLogInClient {
+public class OurPostLogInClient {
 
     // 🌐 WebSocket for in-game actions
     private WebSocketFacade ws;
@@ -27,7 +27,7 @@ public class PostLogInClient {
     public static String color;
 
     // 🏗️ Constructor: We’re in, let’s go
-    public PostLogInClient(String serverUrl) {
+    public OurPostLogInClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
         this.serverUrl = serverUrl;
         listNumberInterpreter = new HashMap<>();

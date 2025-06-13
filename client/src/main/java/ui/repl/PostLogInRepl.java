@@ -1,7 +1,6 @@
 package ui.repl;
 
-import ui.client.PostLogInClient;
-import ui.client.PreLogInClient;
+import ui.client.OurPostLogInClient;
 
 import java.util.Scanner;
 
@@ -11,12 +10,12 @@ public class PostLogInRepl {
 
     public final String authToken;
 
-    private final PostLogInClient client;
+    private final OurPostLogInClient client;
     private final String serverUrl;
 
     // 🏗️ Constructor: Let’s set the stage
     public PostLogInRepl(String serverUrl, String authToken) {
-        client = new PostLogInClient(serverUrl /* ← could pass NotificationHandler here if needed */);
+        client = new OurPostLogInClient(serverUrl /* ← could pass NotificationHandler here if needed */);
         this.serverUrl = serverUrl;
         this.authToken = authToken;
     }

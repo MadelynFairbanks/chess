@@ -2,7 +2,6 @@ package ui.client;
 
 import exception.ResponseException;
 import model.GameID;
-import ui.ServerFacade;
 import ui.websocket.NotificationHandler;
 import ui.websocket.WebSocketFacade;
 
@@ -10,14 +9,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class GamePlayClient {
+public class OurGamePlayClient {
 
     private String serverUrl;  // 🛰️ where our server lives
     private final NotificationHandler notificationHandler;  // 🔔 for spicy game updates
     private WebSocketFacade webSocket;  // 🌐 our lil portal to the chess multiverse
 
     // 🚪 constructor — setting up the vibes
-    public GamePlayClient(String serverUrl, NotificationHandler notificationHandler) {
+    public OurGamePlayClient(String serverUrl, NotificationHandler notificationHandler) {
         this.serverUrl = serverUrl;
         this.notificationHandler = notificationHandler;
     }

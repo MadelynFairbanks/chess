@@ -8,7 +8,7 @@ import model.GameData;
 import model.GameID;
 import org.junit.jupiter.api.*;
 import server.Server;
-import service.ChessService;
+import service.TheChessService;
 import ui.ServerFacade;
 
 import java.util.Random;
@@ -34,14 +34,14 @@ public class ServerFacadeTests {
     static void stopServer() {
         server.stop();
         try {
-            ChessService.clear();
+            TheChessService.clear();
         } catch (DataAccessException ignored) {}
     }
 
     @BeforeEach
     public void clearServer() throws DataAccessException {
         try {
-            ChessService.clear();
+            TheChessService.clear();
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }

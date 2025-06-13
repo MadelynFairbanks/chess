@@ -2,23 +2,23 @@ package ui.repl;
 
 import exception.ResponseException;
 import model.GameID;
-import ui.client.GamePlayClient;
+import ui.client.OurGamePlayClient;
 import ui.websocket.NotificationHandler;
 
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
-import static ui.client.PreLogInClient.authToken;
+import static ui.client.OurPreLogInClient.authToken;
 
 public class GamePlayRepl implements NotificationHandler {
 
-    private final GamePlayClient client;
+    private final OurGamePlayClient client;
     private final String serverUrl;
     private final GameID gameID;
 
     // 🧠 Constructor — gets us ready to vibe in a game
     public GamePlayRepl(String serverUrl, GameID gameID) {
-        this.client = new GamePlayClient(serverUrl, this);
+        this.client = new OurGamePlayClient(serverUrl, this);
         this.serverUrl = serverUrl;
         this.gameID = gameID;
     }

@@ -6,7 +6,7 @@ import exception.ResponseException;
 import model.GameData;
 import model.GameID;
 import ui.LoadBoard;
-import ui.client.PostLogInClient;
+import ui.client.OurPostLogInClient;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
@@ -51,10 +51,10 @@ public class WebSocketFacade extends Endpoint {
                         board = new LoadBoard();
 
                         // 👀 Are we observing or playing?
-                        if (PostLogInClient.color == null) {
+                        if (OurPostLogInClient.color == null) {
                             board.loadBoard(gameData, "observer");
                         } else {
-                            board.loadBoard(gameData, PostLogInClient.color);
+                            board.loadBoard(gameData, OurPostLogInClient.color);
                         }
                     }
                     case ERROR -> {

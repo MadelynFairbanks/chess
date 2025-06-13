@@ -6,7 +6,7 @@ import ui.ServerFacade;
 
 import java.util.Arrays;
 
-public class PreLogInClient {
+public class OurPreLogInClient {
 
     private ServerFacade server;
     private String serverUrl;
@@ -15,7 +15,7 @@ public class PreLogInClient {
     public static String authToken;
 
     // 🚪 Constructor — setting up the server connection
-    public PreLogInClient(String serverUrl) {
+    public OurPreLogInClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
         this.serverUrl = serverUrl;
     }

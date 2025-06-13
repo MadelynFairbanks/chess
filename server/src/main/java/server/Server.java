@@ -3,7 +3,7 @@ package server;
 import com.google.gson.*;
 import dataaccess.*;
 import model.*;
-import service.ChessService;
+import service.TheChessService;
 import spark.*;
 import websocket.WebSocketHandler;
 
@@ -24,7 +24,7 @@ public class Server {
         }
     }
 
-    ChessService service = new ChessService(dataAccess); // 🧙 Service that does the magic
+    TheChessService service = new TheChessService(dataAccess); // 🧙 Service that does the magic
 
     /**
      * 🚀 Spin up the server on the desired port.

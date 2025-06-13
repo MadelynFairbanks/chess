@@ -1,6 +1,6 @@
 package ui.repl;
 
-import ui.client.PreLogInClient;
+import ui.client.OurPreLogInClient;
 
 import java.util.Scanner;
 
@@ -8,12 +8,12 @@ import static ui.EscapeSequences.*;
 
 public class PreLogInRepl {
 
-    private final PreLogInClient client;
+    private final OurPreLogInClient client;
     private final String serverUrl;
 
     // 🏁 Constructor: Gotta set that server connection up
     public PreLogInRepl(String serverUrl) {
-        client = new PreLogInClient(serverUrl /* could pass NotificationHandler here if needed */);
+        client = new OurPreLogInClient(serverUrl /* could pass NotificationHandler here if needed */);
         this.serverUrl = serverUrl;
     }
 
@@ -36,7 +36,7 @@ public class PreLogInRepl {
 
                 // 🚀 If login or registration is successful, head to post-login loop
                 if (result.equals("Successful registration!!") || result.equals("Successful login!!")) {
-                    PostLogInRepl postLoginRepl = new PostLogInRepl(this.serverUrl, PreLogInClient.getAuthToken());
+                    PostLogInRepl postLoginRepl = new PostLogInRepl(this.serverUrl, OurPreLogInClient.getAuthToken());
                     postLoginRepl.run();  // 🎮 start the post-login experience
                 }
 

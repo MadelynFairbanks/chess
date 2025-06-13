@@ -8,7 +8,7 @@ import java.util.Collection;
 
 import static ui.EscapeSequences.*;
 
-public class DrawBoard {
+public class TheDrawBoard {
 
     private static final int BOARD_SIZE_IN_SQUARES = 8;
     private static final int SQUARE_SIZE_IN_PADDED_CHARS = 2;
@@ -19,8 +19,8 @@ public class DrawBoard {
 
     // ✨ Draws the board AND highlights valid moves for a selected piece
     public void drawHighlighted(ChessBoard board, String perspective, ChessPosition position, ChessGame game) {
-        DrawBoard.game = game;
-        DrawBoard.board = board;
+        TheDrawBoard.game = game;
+        TheDrawBoard.board = board;
 
         System.out.println("\n");
         var out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
@@ -32,7 +32,7 @@ public class DrawBoard {
 
     // 🎨 Draws the board without any highlighting
     public void draw(ChessBoard board, String perspective) {
-        DrawBoard.board = board;
+        TheDrawBoard.board = board;
 
         System.out.println("\n");
         var out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
